@@ -153,9 +153,16 @@ describe('M11 consumer contract verification', () => {
   });
 
   it('resolves allowed expression variables', () => {
-    const ctx = { project: { site_tag: 'x' }, spec: { name: 'y' }, stages: {}, item: null, env: {} };
+    const ctx = {
+      project: { site_tag: 'x' },
+      spec: { name: 'y' },
+      stages: { 'architecture-decider': { outputs: { result: { mode: 'multi-page' } } } },
+      item: null,
+      env: {},
+    };
     expect(resolveTemplate('{{project.site_tag}}', ctx)).toBe('x');
     expect(resolveTemplate('{{spec.name}}', ctx)).toBe('y');
+    expect(resolveTemplate('{{stages.architecture-decider.outputs.result.mode}}', ctx)).toBe('multi-page');
   });
 
   it('supports cancellation via AbortSignal', async () => {

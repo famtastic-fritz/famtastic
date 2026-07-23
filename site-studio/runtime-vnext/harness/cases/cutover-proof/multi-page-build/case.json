@@ -1,0 +1,652 @@
+{
+  "meta": {
+    "name": "multi-page-build",
+    "description": "vNext deterministic replay of multi-page-build",
+    "siteTag": "cutover-proof-multi",
+    "hubRoot": "/Users/famtasticfritz/famtastic/site-studio",
+    "startedAt": "2026-07-23T00:07:53.096Z",
+    "endedAt": "2026-07-23T00:07:53.103Z"
+  },
+  "pre": {
+    "timestamp": "2026-07-23T00:07:53.096Z",
+    "spec": {
+      "tag": "site-m11-vnext",
+      "site_name": "Demo Multi Page",
+      "business_type": "service",
+      "design_brief": {
+        "business_name": "Demo Multi Page",
+        "goal": "A multi-page site with consistent nav and footer.",
+        "must_have_sections": [
+          "hero",
+          "about",
+          "services",
+          "testimonials",
+          "contact"
+        ],
+        "tone": [
+          "modern",
+          "trustworthy"
+        ]
+      },
+      "pages": [
+        "index.html",
+        "about.html",
+        "services.html",
+        "contact.html"
+      ],
+      "media_specs": []
+    },
+    "studio": null,
+    "distSnapshot": {},
+    "mutations": [],
+    "traces": []
+  },
+  "post": {
+    "timestamp": "2026-07-23T00:07:53.103Z",
+    "spec": {
+      "tag": "site-m11-vnext",
+      "site_name": "Demo Multi Page",
+      "business_type": "service",
+      "design_brief": {
+        "business_name": "Demo Multi Page",
+        "goal": "A multi-page site with consistent nav and footer.",
+        "must_have_sections": [
+          "hero",
+          "about",
+          "services",
+          "testimonials",
+          "contact"
+        ],
+        "tone": [
+          "modern",
+          "trustworthy"
+        ]
+      },
+      "pages": [
+        "index.html",
+        "about.html",
+        "services.html",
+        "contact.html"
+      ],
+      "media_specs": []
+    },
+    "studio": null,
+    "distSnapshot": {
+      "about.html": {
+        "size": 215,
+        "mtime": "2026-07-23T00:07:53.103Z",
+        "sha256": "95e2b6358f853baef9847eef189ee6af61ee5390bbbe0c32bbc646989bf7e272",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Demo Multi Page</title>\n</head>\n<body>\n  <h1>Welcome to Demo Multi Page</h1>\n  <p>This page was built deterministically.</p>\n</body>\n</html>\n"
+      },
+      "contact.html": {
+        "size": 215,
+        "mtime": "2026-07-23T00:07:53.103Z",
+        "sha256": "95e2b6358f853baef9847eef189ee6af61ee5390bbbe0c32bbc646989bf7e272",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Demo Multi Page</title>\n</head>\n<body>\n  <h1>Welcome to Demo Multi Page</h1>\n  <p>This page was built deterministically.</p>\n</body>\n</html>\n"
+      },
+      "index.html": {
+        "size": 215,
+        "mtime": "2026-07-23T00:07:53.103Z",
+        "sha256": "95e2b6358f853baef9847eef189ee6af61ee5390bbbe0c32bbc646989bf7e272",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Demo Multi Page</title>\n</head>\n<body>\n  <h1>Welcome to Demo Multi Page</h1>\n  <p>This page was built deterministically.</p>\n</body>\n</html>\n"
+      },
+      "services.html": {
+        "size": 215,
+        "mtime": "2026-07-23T00:07:53.103Z",
+        "sha256": "95e2b6358f853baef9847eef189ee6af61ee5390bbbe0c32bbc646989bf7e272",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Demo Multi Page</title>\n</head>\n<body>\n  <h1>Welcome to Demo Multi Page</h1>\n  <p>This page was built deterministically.</p>\n</body>\n</html>\n"
+      }
+    },
+    "mutations": [],
+    "traces": []
+  },
+  "wsEvents": [
+    {
+      "type": "run:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      }
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "copy-template",
+      "stageAttemptId": "stage_1784765273098_087a",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "copy-template",
+      "stageAttemptId": "stage_1784765273098_087a"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-branding",
+      "stageAttemptId": "stage_1784765273099_c0fd",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-branding",
+      "stageAttemptId": "stage_1784765273099_c0fd"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "generate-pages",
+      "stageAttemptId": "stage_1784765273100_7733",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "generate-pages",
+      "stageAttemptId": "stage_1784765273100_7733"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "generate-pages",
+      "stageAttemptId": "stage_1784765273100_29bc",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "generate-pages",
+      "stageAttemptId": "stage_1784765273100_29bc"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "generate-pages",
+      "stageAttemptId": "stage_1784765273101_372e",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "generate-pages",
+      "stageAttemptId": "stage_1784765273101_372e"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-page-branding",
+      "stageAttemptId": "stage_1784765273101_c05e",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-page-branding",
+      "stageAttemptId": "stage_1784765273101_c05e"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-page-branding",
+      "stageAttemptId": "stage_1784765273102_787f",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-page-branding",
+      "stageAttemptId": "stage_1784765273102_787f"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-page-branding",
+      "stageAttemptId": "stage_1784765273102_64dd",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "apply-page-branding",
+      "stageAttemptId": "stage_1784765273102_64dd"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "verify-output",
+      "stageAttemptId": "stage_1784765273102_8e27",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      },
+      "stageId": "verify-output",
+      "stageAttemptId": "stage_1784765273102_8e27"
+    },
+    {
+      "type": "run:committed",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      }
+    },
+    {
+      "type": "run:published",
+      "runContext": {
+        "run_id": "run_1784765273096_a85f",
+        "project_id": "project_1784765273095_440c",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+        "started_at": "2026-07-23T00:07:53.096Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:53.102Z"
+      }
+    }
+  ],
+  "actionResult": {
+    "status": "published",
+    "runContext": {
+      "run_id": "run_1784765273096_a85f",
+      "project_id": "project_1784765273095_440c",
+      "recipe_id": "deterministic-site-build-v1",
+      "recipe_version": "1.0.0",
+      "status": "published",
+      "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-multi/runs/run_1784765273096_a85f",
+      "started_at": "2026-07-23T00:07:53.096Z",
+      "trigger": "test",
+      "parent_run_id": null,
+      "ended_at": "2026-07-23T00:07:53.102Z"
+    },
+    "stageOutputs": {
+      "copy-template": {
+        "outputs": {
+          "html": {
+            "result": {
+              "source": "/Users/famtasticfritz/famtastic/site-studio/runtime-vnext/recipes/fixtures/template.html",
+              "destination": "index.html"
+            },
+            "sideEffects": [
+              {
+                "path": "index.html",
+                "kind": "copy"
+              }
+            ],
+            "artifactReferences": [
+              "artifact_1784765273099_a632"
+            ],
+            "durationMs": 0,
+            "costUsd": 0
+          }
+        }
+      },
+      "apply-branding": {
+        "outputs": {
+          "html": {
+            "result": {
+              "path": "index.html",
+              "replacementsApplied": 1
+            },
+            "sideEffects": [
+              {
+                "path": "index.html",
+                "kind": "transform"
+              }
+            ],
+            "artifactReferences": [
+              "artifact_1784765273100_5b36"
+            ],
+            "durationMs": 0,
+            "costUsd": 0
+          }
+        }
+      },
+      "generate-pages": {
+        "outputs": {
+          "html": [
+            {
+              "result": {
+                "source": "/Users/famtasticfritz/famtastic/site-studio/runtime-vnext/recipes/fixtures/template.html",
+                "destination": "about.html"
+              },
+              "sideEffects": [
+                {
+                  "path": "about.html",
+                  "kind": "copy"
+                }
+              ],
+              "artifactReferences": [
+                "artifact_1784765273100_d2b9"
+              ],
+              "durationMs": 0,
+              "costUsd": 0
+            },
+            {
+              "result": {
+                "source": "/Users/famtasticfritz/famtastic/site-studio/runtime-vnext/recipes/fixtures/template.html",
+                "destination": "services.html"
+              },
+              "sideEffects": [
+                {
+                  "path": "services.html",
+                  "kind": "copy"
+                }
+              ],
+              "artifactReferences": [
+                "artifact_1784765273101_9a47"
+              ],
+              "durationMs": 1,
+              "costUsd": 0
+            },
+            {
+              "result": {
+                "source": "/Users/famtasticfritz/famtastic/site-studio/runtime-vnext/recipes/fixtures/template.html",
+                "destination": "contact.html"
+              },
+              "sideEffects": [
+                {
+                  "path": "contact.html",
+                  "kind": "copy"
+                }
+              ],
+              "artifactReferences": [
+                "artifact_1784765273101_03cd"
+              ],
+              "durationMs": 0,
+              "costUsd": 0
+            }
+          ]
+        }
+      },
+      "apply-page-branding": {
+        "outputs": {
+          "html": [
+            {
+              "result": {
+                "path": "about.html",
+                "replacementsApplied": 1
+              },
+              "sideEffects": [
+                {
+                  "path": "about.html",
+                  "kind": "transform"
+                }
+              ],
+              "artifactReferences": [
+                "artifact_1784765273101_1828"
+              ],
+              "durationMs": 0,
+              "costUsd": 0
+            },
+            {
+              "result": {
+                "path": "services.html",
+                "replacementsApplied": 1
+              },
+              "sideEffects": [
+                {
+                  "path": "services.html",
+                  "kind": "transform"
+                }
+              ],
+              "artifactReferences": [
+                "artifact_1784765273102_4fcc"
+              ],
+              "durationMs": 0,
+              "costUsd": 0
+            },
+            {
+              "result": {
+                "path": "contact.html",
+                "replacementsApplied": 1
+              },
+              "sideEffects": [
+                {
+                  "path": "contact.html",
+                  "kind": "transform"
+                }
+              ],
+              "artifactReferences": [
+                "artifact_1784765273102_e2b0"
+              ],
+              "durationMs": 0,
+              "costUsd": 0
+            }
+          ]
+        }
+      },
+      "verify-output": {
+        "outputs": {
+          "verification-report": {
+            "result": {
+              "path": "index.html",
+              "exists": true
+            },
+            "sideEffects": [],
+            "artifactReferences": [],
+            "durationMs": 0,
+            "costUsd": 0
+          }
+        }
+      }
+    }
+  }
+}

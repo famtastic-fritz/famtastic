@@ -56,18 +56,46 @@ function normalizeLegacyRequest(legacy) {
     custom_domains: legacy.custom_domains || [],
   };
 
-  const siteType = (legacy.pages && legacy.pages.length > 1) ? 'multi-page' : 'single-page';
+  const legacyPages = Array.isArray(legacy.pages) ? legacy.pages : [];
+  const siteType = legacyPages.length > 1 ? 'multi-page' : 'single-page';
+  const architecturePreference = legacy.architecture_preference
+    || (siteType === 'multi-page' ? 'multi-page' : 'single-page');
+  const requiredPages = legacyPages
+    .map((page) => {
+      if (typeof page === 'string') {
+        const normalized = page.replace(/\.html$/i, '').trim();
+        if (!normalized || normalized === 'index' || normalized === 'home') return null;
+        return normalized;
+      }
+      if (page && typeof page === 'object') {
+        const candidate = page.page_id || page.name || page.title || page.route || '';
+        const normalized = String(candidate)
+          .replace(/^\//, '')
+          .replace(/\.html$/i, '')
+          .replace(/\/$/, '')
+          .trim();
+        if (!normalized || normalized === 'index' || normalized === 'home') return null;
+        return page;
+      }
+      return null;
+    })
+    .filter(Boolean);
 
   return {
     site_tag: legacy.siteTag || legacy.site_tag || 'site',
     site_type: siteType,
+    architecture_preference: architecturePreference,
+    architecture_constraints: {
+      required_pages: requiredPages,
+      rejected_patterns: legacy.rejected_patterns || [],
+    },
     business: biz,
     brand,
     content_inputs: contentInputs,
     positioning,
     deploy,
     assets_available: legacy.assets_available || {},
-    custom_pages: legacy.pages || [],
+    custom_pages: legacyPages,
     rejected_patterns: legacy.rejected_patterns || [],
   };
 }

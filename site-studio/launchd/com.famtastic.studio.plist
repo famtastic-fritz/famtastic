@@ -52,6 +52,8 @@
     <string>/Users/famtasticfritz</string>
     <key>NVM_DIR</key>
     <string>/Users/famtasticfritz/.nvm</string>
+    <key>FAMTASTIC_USE_RUNTIME_VNEXT</key>
+    <string>1</string>
   </dict>
 </dict>
 </plist>

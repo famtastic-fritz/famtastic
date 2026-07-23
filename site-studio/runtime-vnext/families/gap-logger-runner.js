@@ -29,7 +29,7 @@ class GapLoggerRunner {
 
     // Browser QA gap
     if (browserQa.status === 'deferred' || browserQa.provider === 'none') {
-      gaps.push({ category: 'qa', severity: 'warning', id: 'browser-qa', description: 'Puppeteer not installed — browser QA skipped. Install puppeteer to enable visual QA.', deferred: true });
+      gaps.push({ category: 'qa', severity: 'warning', id: 'browser-qa', description: 'Playwright browser QA was skipped or unavailable. Enable playwright-backed browser verification before cutover.', deferred: true });
     }
 
     // Collect issues from QA

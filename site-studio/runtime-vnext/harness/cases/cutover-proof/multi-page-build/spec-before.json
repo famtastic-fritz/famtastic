@@ -1,0 +1,27 @@
+{
+  "tag": "site-m11-vnext",
+  "site_name": "Demo Multi Page",
+  "business_type": "service",
+  "design_brief": {
+    "business_name": "Demo Multi Page",
+    "goal": "A multi-page site with consistent nav and footer.",
+    "must_have_sections": [
+      "hero",
+      "about",
+      "services",
+      "testimonials",
+      "contact"
+    ],
+    "tone": [
+      "modern",
+      "trustworthy"
+    ]
+  },
+  "pages": [
+    "index.html",
+    "about.html",
+    "services.html",
+    "contact.html"
+  ],
+  "media_specs": []
+}

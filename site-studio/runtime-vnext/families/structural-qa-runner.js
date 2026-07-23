@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { outputPathForPage } = require('../lib/page-output-path');
 
 class StructuralQaRunner {
   async execute(request, { runContext, stageAttempt, abortSignal }) {
@@ -13,7 +14,7 @@ class StructuralQaRunner {
 
     // Check each page file exists
     for (const pm of pageManifests) {
-      const outPath = pm.output_path || (pm.page_id === 'home' ? 'index.html' : pm.page_id + '/index.html');
+      const outPath = outputPathForPage(pm);
       const fullPath = path.join(outputsDir, outPath);
       const exists = fs.existsSync(fullPath);
       checks.push({ check: 'page-file-exists', page_id: pm.page_id, path: outPath, pass: exists });
@@ -38,7 +39,7 @@ class StructuralQaRunner {
 
     // HTML content checks on found pages
     for (const pm of pageManifests) {
-      const outPath = pm.output_path || (pm.page_id === 'home' ? 'index.html' : pm.page_id + '/index.html');
+      const outPath = outputPathForPage(pm);
       const fullPath = path.join(outputsDir, outPath);
       if (!fs.existsSync(fullPath)) continue;
 

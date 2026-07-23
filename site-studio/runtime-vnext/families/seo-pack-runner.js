@@ -8,7 +8,10 @@ class SeoPackRunner {
     const b = request.buildRequest || {};
     const sm = request.siteManifest || {};
     const pageManifests = request.pageManifests || [];
-    const contentPackets = request.contentPackets || [];
+    const rawContentPackets = request.contentPackets;
+    const contentPackets = Array.isArray(rawContentPackets)
+      ? rawContentPackets
+      : rawContentPackets ? [rawContentPackets] : [];
     const biz = b.business || {};
     const deploy = b.deploy || {};
 

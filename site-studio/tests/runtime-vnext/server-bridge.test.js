@@ -36,4 +36,14 @@ describe('legacy-compat bridge', () => {
     });
     expect(req.content_inputs.services[0]).toEqual({ name: 'Service A', description: '' });
   });
+
+  it('maps legacy multi-page hints into architecture constraints', () => {
+    const req = normalizeLegacyRequest({
+      siteTag: 'test',
+      siteName: 'Test',
+      pages: ['index.html', 'about.html', 'services'],
+    });
+    expect(req.architecture_preference).toBe('multi-page');
+    expect(req.architecture_constraints.required_pages).toEqual(['about', 'services']);
+  });
 });

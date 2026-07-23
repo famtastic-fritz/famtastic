@@ -4,9 +4,176 @@ type: note
 permalink: shay-memory/repo-docs/site-learnings
 ---
 
-<!-- mirrored from ~/famtastic/SITE-LEARNINGS.md -->
+## 2026-07-23 — Site Studio runtime-vnext modular cutover baseline
+
+Site Studio now has a real callable modular baseline instead of only an increasingly dangerous single-file shell. The live rebuild lane at `http://127.0.0.1:3334/` is still grounded in the existing app, but core responsibilities were split into named seams: `site-studio/server/spec-store.js`, `site-studio/server/runtime-status-routes.js`, `site-studio/server/deploy-repo-routes.js`, `site-studio/server/studio-state-routes.js`, `site-studio/server/ws-runtime.js`, `site-studio/runtime-vnext/register-routes.js`, and `site-studio/runtime-vnext/lib/page-output-path.js`. The frontend shell stopped carrying everything in one embedded script blob: `site-studio/public/index.html` now delegates panel/runtime behaviors into `public/js/studio-build-controls.js`, `studio-chat-ui.js`, `studio-deploy-pane.js`, `studio-preview-pages.js`, `studio-project-switcher.js`, `studio-runtime-ws.js`, `studio-state-snapshot.js`, `studio-embedded-intents.js`, and `studio-embedded-mode.js`.
+
+The external contract is now frozen in truth-surface docs instead of living as vibes. `site-studio/runtime-vnext/SITE-STUDIO-RUN-TO-COMPLETION-BRIEF-2026-07-23.md` marks milestones M0-M9 complete, and `site-studio/runtime-vnext/SITE-STUDIO-CALLABLE-CONTRACT-2026-07-23.md` documents the live request/response contract for `POST /api/vnext-build` and `POST /api/rebuild-runtime-vnext`, including the Origin gate, legacy normalization path, artifact-path response fields, and the fact that proof/gap outputs are returned as build artifact paths instead of standalone HTTP endpoints.
+
+### Verified
+- `cd ~/famtastic/site-studio && /Users/famtasticfritz/.nvm/versions/node/v24.14.0/bin/node ./node_modules/vitest/vitest.mjs run tests/characterization-harness.test.js tests/runtime-vnext/consumer-contract.test.js tests/rewrite-seams.test.js tests/runtime-vnext/server-bridge.test.js tests/runtime-vnext/milestone-e.test.js` passed (38/38).
+- `curl http://127.0.0.1:3334/api/health` returned `200` with `{"status":"ok"...}` while the live Studio was serving `/` on port `3334`.
+- Runtime-vnext proof artifacts exist on disk for the verified JJ B&A Transport rebuild, including `site-studio/sites/site-jj-ba-transport/runs/run-d26aa88bf0fc/reports/proof-report.json` and `.../gap-log.json`.
+- `site-studio/runtime-vnext/SITE-STUDIO-PRODUCTION-STATUS-2026-07-23.md` now records the honest state: live cutover is real, but the backend monolith is not gone yet.
+
+### Known Gaps updated
+- `site-studio/server.js` is still oversized and still owns too many responsibilities; this pass established safe seams, not full backend decomposition closure.
+- Proof references still need one canonical latest-run reconciliation. The verified JJ B&A artifact set exists, but the production-status note already references a newer run id than the earlier proof callout.
+- The callable modular baseline is now real enough to serve as the new local base, but repo-level documentation and branch/base promotion still need disciplined git closeout each time future decomposition slices land.
+
+## 2026-07-22 — MBSH prod backend recovery + live poll lane
+Recovered the live MBSH PHP backend into the canonical repo at `sites/site-mbsh-reunion/backend/`, ending the server-only drift where production code was no longer mirrored under `~/famtastic/`. Added `sites/site-mbsh-reunion/backend/schema.sql` with `poll_questions`, `poll_options`, and `poll_votes`; added the public vote surface at `sites/site-mbsh-reunion/backend/poll.php`; added the committee admin poll surface at `sites/site-mbsh-reunion/backend/admin/polls.php`; and linked the admin dashboard via `sites/site-mbsh-reunion/backend/admin/dashboard.php`. Updated `sites/site-mbsh-reunion/spec.json` so the canonical tracked repo path now points at `~/famtastic/sites/site-mbsh-reunion` instead of the dead sibling path. Verified by applying the schema live on prod, deploying the backend with `deploy-backend.sh`, confirming `https://api.mbsh96reunion.com/poll.php` serves 200, creating a live test poll, submitting a live vote through the public page, and confirming the vote landed in prod DB.
+
+### Known Gaps opened
+- The MBSH admin password stored in vault is currently out of sync with prod or the login lane is throttled, so admin login verification through `/admin/login.php` did not complete even though the new poll/admin files are deployed and the public poll flow plus DB writes are verified.
+- The new poll lane currently has public page + admin management/results, but no CSV export, no date-range filter, and no committee email notification on vote submission yet.
+
+## 2026-07-22 — Site Studio Proof Mode isolated artifact lane
+
+Site Studio now has an additive Proof Mode API lane for pre-sale mockups: `POST /api/proof-generate` and `POST /api/proof-campaign` live in `site-studio/server.js` and generate single-page static proof artifacts outside the active `TAG` / `DIST_DIR()` lifecycle. The implementation deliberately reuses template-first prompt assets while writing to caller-provided isolated output directories, stops after `_template.html` + `index.html` + `design-dna.json`, and skips `finishParallelBuild()`, `runPostProcessing()`, Netlify deploy, full build verification, and media autofill. Campaign generation is sequential by design so three proof directions do not contend for process-wide Site Studio state. Thumbnail generation is available only when a hosted `proof_url` is supplied; otherwise the response records a skipped thumbnail.
+
+### Verified
+- `node --check site-studio/server.js`
+- `STUDIO_PORT=3399 PREVIEW_PORT=3398 node site-studio/server.js`
+- `curl` validation against `/api/health`, `/api/proof-generate`, and `/api/proof-campaign` with an allowed localhost origin
+- `git diff --check -- site-studio/server.js`
+- `node scripts/plans/audit.js`
+
+## 2026-07-06 — FAMtastic Designs stabilization re-audit and contact-domain correction
+
+`sites/site-famtastic-designs` now has a fresh public-stabilization truth pass grounded against both the local production-safe preview and the live `https://famtasticdesigns.com` site. The branch `famtastic/prod-stabilization-tv-review` still passes `pnpm install`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`, and the verified preview posture remains `HOST=127.0.0.1 PORT=3001 ENABLE_ADMIN_PROOF=false NUXT_PUBLIC_ENABLE_ADMIN_PROOF=false NUXT_PUBLIC_ENABLE_PAYMENT_PROOF=false NUXT_PUBLIC_SITE_URL=http://127.0.0.1:3001 NUXT_PUBLIC_CMS_MODE=local NUXT_PUBLIC_LEAD_CAPTURE_MODE=manual NUXT_PUBLIC_PAYMENT_MODE=mock NUXT_PUBLIC_PORTAL_MODE=preview BOOKING_PROVIDER=manual node .output/server/index.mjs`.
+
+The public contact identity was corrected so `data/famtastic/site.ts` now uses `hello@famtasticdesigns.com`, and `components/ShortConsultationForm.vue` no longer hardcodes a stale `.co` address — it now resolves the consultation `mailto:` target from the site content itself. Added `sites/site-famtastic-designs/docs/PRODUCTION_STABILIZATION_AUDIT.md` and `sites/site-famtastic-designs/docs/PRODUCTION_FORM_BEHAVIOR.md` so the repo now documents the actual public behavior: short and long forms stay in manual email-draft mode unless `NUXT_PUBLIC_LEAD_CAPTURE_MODE=api`, `/api/leads` falls back to local `.data/famtastic-leads.json` unless a real Directus lane is configured and working, and booking/payment CTAs stay on safe intake fallbacks in mock/manual mode.
+
+### Verified
+- `cd ~/famtastic/sites/site-famtastic-designs && pnpm install && pnpm typecheck && pnpm lint && pnpm build` passed.
+- Local preview served `/`, `/services`, `/pricing`, `/packages`, `/work`, `/contact`, `/get-started`, `/portal`, `/client-portal-login`, `/thank-you`, `/privacy-policy`, `/terms-of-service`, `/cookie-policy`, `/sitemap`, `/sitemap.xml`, and `/robots.txt`, while `/admin-proof` returned `404` with admin proof disabled.
+- Local `robots.txt` disallows `/admin-proof` and `/payment-proof`, and public contact pages now surface `hello@famtasticdesigns.com` consistently.
+- Live checks still show `https://famtasticdesigns.com/privacy-policy/` returning `404`, and live `robots.txt` still lacks the `/admin-proof` + `/payment-proof` disallow lines.
+
+### Known Gaps updated
+- The current blocker is still the GoDaddy production lane, not the stabilization branch: browser access lands on the GoDaddy sign-in screen, `ssh-add -l` reports no loaded identities, and SSH to `xrdj7j99xhzt@p3plzcpnl497512.prod.phx3.secureserver.net` still fails with `Permission denied (publickey,password)`.
+- Live production remains stale relative to the verified branch until the authenticated deploy lane is available.
+- Public forms are intentionally honest fallback surfaces, but real production lead notification/storage, Directus runtime CMS, portal auth, and payment automation remain separate backend-lane work.
+
+## 2026-07-02 — Shay autonomous enhancement closure pass
+
+`shay-shay/agent/reviewer_routing_guard.py` now consumes `~/.shay/runtime/model-routing/reviewer-summary.json` and converts reviewer bake-off recommendations into runtime allow/deny decisions for reviewer lanes. `shay-shay/tools/delegate_tool.py` now calls that guard before child construction, writes route decisions to `~/.shay/runtime/model-routing/route-decisions.jsonl`, and blocks protected adversarial/final-blocker reviewer lanes when the selected/inherited reviewer lacks promotion evidence. `shay-shay/agent/memory_manager.py` now writes prefetch proof traces to `~/.shay/runtime/prefetch/prefetch-proof.jsonl` for every pre-turn prefetch call, so context loading can be audited instead of assumed. `shay-shay/agent/intelligence_governance.py` adds `AuxiliaryLLMReflectionClient`, and `shay-shay/agent/intelligence_loop.py` now wires it when `generative_reflection.enabled` is true instead of always passing `client=None`.
+
+### Verified
+- `cd ~/famtastic/shay-shay && uv run pytest tests/agent/test_reviewer_routing_guard.py tests/agent/test_memory_prefetch_trace.py tests/agent/test_reviewer_bakeoff.py tests/agent/test_intelligence_loop.py -q` passed (18 passed).
+
+### Known Gaps updated
+- The prior reviewer-bakeoff enforcement gap is partly closed for `delegate_task` reviewer lanes; broader HyperSwarm-specific controller surfaces still need to consume the same guard everywhere they bypass `delegate_task`.
+- Prefetch now emits proof traces, but the seeded multi-prompt hit-rate harness is still the next proof layer before claiming production-observed anticipatory context.
+- Generative reflection now has a real aux-LLM client path, but deployment still depends on enabling `intelligence_loop.generative_reflection` with an approved cheap provider/model in config.
+
+## 2026-07-02 — FAMtastic By the Numbers Netlify web-first hardening
+
+`apps/famtastic-by-the-numbers/` now carries a production Netlify adapter for the web-first review surface instead of assuming the local Express server is the only truth path. Added `apps/famtastic-by-the-numbers/netlify.toml` with `/api/* -> /.netlify/functions/api/:splat` routing plus `apps/famtastic-by-the-numbers/netlify/functions/api.js`, which mirrors the app server routes for `/api/health`, `/api/config`, `/api/purchase/status`, `/api/purchase/restore`, `/api/paypal/create-order`, and `/api/paypal/capture-order` using the same `lib/config.js`, `lib/paypal.js`, and `lib/db.js` modules. `apps/famtastic-by-the-numbers/lib/db.js` now detects serverless runtime and writes JSON proof-mode state to `/tmp/famtastic-by-the-numbers-dev-store.json` so Netlify Functions can persist mock checkout/unlock state without trying to write into the read-only deploy bundle.
+
+UX/product hardening in the same pass: `apps/famtastic-by-the-numbers/chart.html` changed the hero CTA to `#intake`, added the visible empty-state prompt, changed results to `aria-live="polite"`, renamed the math section to `Your receipts`, tightened the action-bar trust copy, and removed public-facing Pass 1/Pass 2/internal-mode language. `apps/famtastic-by-the-numbers/app.js` now uses UTF-8-safe base64url share payloads, `getUTCFullYear()` for personal-year calculation, robust `readJsonResponse()` error handling for API failures, and visible share feedback/status updates; `apps/famtastic-by-the-numbers/styles.css` now narrows the chart shell into a more centered mobile-first app feel and gives the math section a receipt-style visual treatment.
+
+### Verified
+- `cd ~/famtastic/apps/famtastic-by-the-numbers && node --check app.js && node --check netlify/functions/api.js && npm run smoke:local`
+- `cd ~/famtastic/apps/famtastic-by-the-numbers && git diff --check`
+- Live public HTTP proof on `https://famtastic-by-the-numbers.netlify.app` for `/api/health`, `/api/config`, `/api/purchase/status`, `/api/paypal/create-order`, `/api/paypal/capture-order`, and `/api/purchase/restore`
+- Live Playwright proof on the public URL covering chart generation, share-link status, compatibility flow, premium unlock, restore, and no horizontal mobile overflow
+
+### Known Gaps opened
+- Public Netlify verification is currently in `paymentMode: mock` / `persistenceMode: dev-json`; real live-money PayPal + MySQL proof still depends on production secrets and that earlier live-payments lane remains a separate truth surface from this Netlify review deploy.
+- The chart page is intentionally tighter and more app-like on desktop now, but final visual boldness/FAMtastic art direction still has room for a stronger signature move after the web-first function pass.
+
+## 2026-07-02 — Reviewer route bake-off and telemetry validation
+
+Added `shay-shay/agent/reviewer_bakeoff.py`, `shay-shay/docs/benchmarks/reviewer-bakeoff-packets.json`, and `shay-shay/tests/agent/test_reviewer_bakeoff.py` so reviewer routing can now be measured with packet hashes, grounded-review gates, JSONL scorecards, raw live-output evidence, and reducer recommendations instead of vibes. The first proof run wrote `~/.shay/runtime/model-routing/reviewer-scorecard.jsonl` and `~/.shay/runtime/model-routing/reviewer-summary.json`: simulated `custom/gemma4:latest` failed 5/5 packet-consumption/grounding checks and was demoted from adversarial/final-blocker review, while simulated `custom/glm-5.1` passed 5/5 seeded reviewer packets. The live-provider wrapper now sends the same benchmark packets through `agent.auxiliary_client.call_llm()` via `--live --candidate provider/model[,budget[,tool_capable]]`, saves raw outputs under `~/.shay/runtime/model-routing/reviewer-outputs/<run-id>/`, and scores provider errors as quality failures instead of hiding them. `shay-shay/agent/swarm_telemetry.py` now normalizes lane records before JSONL writes, preserves manually logged durations, computes timestamp-derived durations, and flags invalid timestamp ordering with `telemetry_invalid_time` so bad lane clocks are visible instead of silently accepted.
+
+### Verified
+- `cd ~/famtastic/shay-shay && uv run python --version` returned Python 3.11.15, avoiding the system Python 3.9 union-type failure path.
+- `cd ~/famtastic/shay-shay && uv run pytest tests/agent/test_reviewer_bakeoff.py tests/agent/test_intelligence_governance.py tests/agent/test_intelligence_loop.py -q` passed (20 passed).
+- `cd ~/famtastic/shay-shay && uv run python -m compileall agent/reviewer_bakeoff.py` passed.
+- `cd ~/famtastic/shay-shay && python3 -m agent.reviewer_bakeoff --write-default-packets --simulate --reduce ...` produced a reducer summary with 10 scored packet/model runs, proving both failure logging and promotion/demotion output paths.
+- `cd ~/famtastic/shay-shay && uv run python -m agent.reviewer_bakeoff --live --candidate openai-codex/gpt-5.5,premium,true --reduce ...` produced 5/5 live passes and promoted `openai-codex/gpt-5.5` for all seeded reviewer task families.
+- `cd ~/famtastic/shay-shay && uv run python -m agent.reviewer_bakeoff --live --candidate custom:ollama-local/qwen3:14b,cheap,false --reduce ...` produced 3/5 live passes, showing local Qwen is usable for some review families but still needs more evidence before promotion.
+
+### Known Gaps opened
+- The live probe proved candidate execution through the auxiliary LLM layer, but route enforcement is not yet wired into `delegate_task`; reviewer recommendations remain evidence artifacts until a routing controller consumes the summary.
+- Local `custom:ollama-local/qwen3:14b` passed only 3/5 seeded reviewer packets, so it should stay candidate/limited-review instead of adversarial or final-blocker default.
+- `custom/glm-5.1` and `custom/gemma4:latest` were invoked with the wrong provider label in one probe and truthfully failed as Gemini 404s; future local/custom probes must use named custom providers such as `custom:ollama-local/<model>` or an explicit configured route.
+
+## 2026-07-02 — Shay intelligence-loop five-slice closure
+
+Added a read-only Shay intelligence prefetch layer in `shay-shay/agent/intelligence_prefetch.py` and wired it into `shay-shay/run_agent.py` before the tool loop so thin `MEMORY.md` / `USER.md` pointer entries can dereference into relevant off-prompt artifacts without making prompt memory bigger. Added `shay-shay/agent/intelligence_loop.py` as the executable closure surface for the remaining loop slices: local L2/L3 reflection synthesis, review-gated pointer candidate generation, review-gated capability reconciliation proposals, and session-context candidate generation. The prefetcher now also reads generated artifacts from `obsidian/Shay-Memory/reflections/reflection-synthesis.json`, `pointer-candidates.json`, `capability-proposals.json`, and `session-context.json`, so the loop produces structured water and the prefetch pipe can load it.
+
+### Verified
+- `cd ~/famtastic-worktrees/shay-intelligence-loop && /Users/famtasticfritz/famtastic/shay-shay/.venv/bin/python -m pytest tests/agent/test_intelligence_loop.py tests/agent/test_intelligence_prefetch.py tests/agent/test_memory_provider.py tests/run_agent/test_memory_sync_interrupted.py tests/test_intelligence_layer.py -q` passed (165 passed).
+- A live loop run wrote `/Users/famtasticfritz/famtastic/obsidian/Shay-Memory/reflections/reflection-synthesis.json`, `pointer-candidates.json`, `capability-proposals.json`, `session-context.json`, and `intelligence-loop-closeout.json` with 12 L2 claims, 1 L3 pattern, 4 pointer candidates, 37 capability proposals, and 4 session-context items.
+- `tests/test_intelligence_layer.py::test_runtime_checkout_anchor_reports_live_checkout_state` now accepts the isolated `/Users/famtasticfritz/famtastic-worktrees/shay-intelligence-loop` checkout as a valid live worktree anchor instead of assuming every test run ends in `/shay-shay`.
+
+### Known Gaps opened
+- Reflection synthesis is local/deterministic in this slice, not a paid auxiliary-LLM generation pass; it produces useful ranked candidates but not deep model-authored interpretation yet.
+- Pointer promotion and capability reconciliation are intentionally proposal-only; canonical `MEMORY.md` / `USER.md` and `shay_cli/intelligence_seed.py` are not silently mutated.
+- Ambient context is limited to available local/session artifacts and tool hints; calendar, iMessage, browser state, screen state, and health-style inputs remain future permissioned integrations.
+
+## 2026-06-25 — FAMtastic Designs public rescue hardening and deploy-lane block
+
+Prepared `sites/site-famtastic-designs` for a safe public rescue cutover without touching the incomplete backend lane. The rescue branch now gates `server/utils/cms.ts` so admin-proof `.data` overrides apply only when `ENABLE_ADMIN_PROOF=true`, removes the static `public/robots.txt` file so `server/routes/robots.txt.ts` becomes authoritative again, and keeps `robots.txt` blocking `/admin-proof` plus `/payment-proof`. Public-facing copy across `pages/index.vue`, `pages/pricing.vue`, `pages/packages.vue`, `pages/portal.vue`, `pages/client-portal-login.vue`, `pages/get-started.vue`, `components/ShortConsultationForm.vue`, `layouts/famproof.vue`, `data/famtastic/site.ts`, and `data/famtastic/packages.ts` was tightened so the rescue site stops leaking proof/mock language, stops implying live checkout, and uses a manual email-draft consultation fallback instead of pretending production lead capture is wired.
+
+### Verified
+- `cd ~/famtastic/sites/site-famtastic-designs && pnpm install && pnpm typecheck && pnpm lint && pnpm build` passed.
+- Local preview via `.output/server/index.mjs` with production-safe flags served `/`, `/services`, `/pricing`, `/packages`, `/work`, `/contact`, `/get-started`, `/portal`, `/client-portal-login`, `/thank-you`, `/privacy-policy`, `/terms-of-service`, `/cookie-policy`, `/sitemap`, `/sitemap.xml`, and `/robots.txt` successfully.
+- Browser automation confirmed `/admin-proof` returns 404 when admin proof is disabled, cookie banner renders and dismisses, and consultation/audit CTAs route to safe `/get-started` paths.
+- DNS lookup confirmed `famtasticdesigns.com` resolves to `107.180.51.234` while the previously referenced GoDaddy/cPanel host is `p3plzcpnl497512.prod.phx3.secureserver.net`.
+
+### Known Gaps opened
+- Live deployment is still blocked because authenticated production access was not available in-session; SSH to `xrdj7j99xhzt@p3plzcpnl497512.prod.phx3.secureserver.net` returned `Permission denied (publickey,password)`.
+- The public rescue build intentionally uses manual consultation fallback; there is still no proven production database/email notification lane for public form submissions.
+- Directus CMS runtime, real portal auth, live PayPal checkout, live booking integration, and production email automation remain backend-lane follow-up work and were not promoted by this rescue pass.
 
 # FAMtastic Ecosystem — Site Learnings
+
+## 2026-06-26 — Shay swarm worker pool route enforcement
+
+`shay-shay/shay_cli/intelligence_cmd.py` now maps each `_run_swarm_worker_packet()` child runtime from the packet `routing_tier` through the product worker pool registry instead of inheriting the parent session model/provider from `_resolve_delegation_credentials()`. The new `_map_tier_to_worker_route()` helper selects the `famtastic-by-the-numbers` v1 `implementation-worker` pool by default, maps `cheap -> glm-5.2`, `standard -> glm-5.1`, `premium -> ollama-qwen3-14b`, preserves worker-pool `forbidden_routes`, and converts route IDs into explicit child-agent `provider`, `model`, and `base_url` values before `_build_child_agent()` runs. Focused regression tests in `shay-shay/tests/test_intelligence_layer.py` prove the parent can be `openai-codex/gpt-5.5` while the child is still built as `glm/glm-5.2` from the worker pool.
+
+### Verified
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m py_compile shay_cli/intelligence_cmd.py tests/test_intelligence_layer.py` passed.
+- `cd ~/famtastic/shay-shay && .venv/bin/python -m pytest -q tests/test_intelligence_layer.py -k 'swarm_worker_route_mapping or run_swarm_worker_packet_builds_child_from_worker_route or safe_hyperswarm_dry_run'` passed (3 passed).
+- `cd ~/famtastic/shay-shay && shay intelligence swarm dry-run` completed with status `working`, `workers_marked_done=true`, and ledger proof showing worker `provider=glm`, `model=glm-5.2` after the GLM/Z.ai key was refreshed.
+
+### Known Gaps opened
+- GLM workers can still exhaust the one-iteration dry-run budget and append summary text after valid JSON; `_parse_swarm_worker_json_response()` now tolerates trailing summary text, but the dry-run prompt/budget should still be tightened so workers return clean JSON without needing recovery parsing.
+
+## 2026-06-24 — Universal intelligence-route export + Codex/GLM routing correction
+
+Added a canonical cross-runtime route-truth surface so the Shay CLI and `shay-agent-os` no longer have to carry separate, drifting stories about model/brain selection. `shay-shay/shay_cli/intelligence_control_plane.py` now builds and auto-refreshes `~/.shay/control-plane/universal-intelligence-route.json`, emits `generated_at`, `source_files`, and `refresh_command` metadata, and keeps `shay-shay/shay_cli/main.py` + `shay-shay/shay_cli/intelligence_cmd.py` aligned through `shay intelligence control-plane export` and `show-universal`. `shay-agent-os/components/swarm/brain_client.py`, `asyncio_dispatcher.py`, and `local_swarm_dispatcher.py` now refresh that shared file when the source control-plane surfaces are newer, pass `task_family` into live brain calls, and enforce shared task-family route policy instead of only reordering local brain fallback. After Fritz’s review, the route doctrine was corrected so Codex is modeled as `openai-codex-gpt-5.5`, both Codex `gpt-5.4` and `gpt-5.5` route IDs are blocked everywhere the default anti-drain builder policy applies, `glm-5.2` is restored as the lead `famtastic-by-the-numbers` v1 implementation route instead of being wrongly treated as forbidden, and Codex was removed from default review/browser/orchestrator preferred-route lists so it is explicit opt-in instead of ambient default routing.
+
+### Verified
+- `cd ~/famtastic/shay-shay && uv run pytest tests/test_intelligence_layer.py -q` passed (74 passed).
+- `cd ~/famtastic/shay-shay && uv run python -m shay_cli.main intelligence control-plane export` wrote the universal truth file to `~/.shay/control-plane/universal-intelligence-route.json`.
+- `cd ~/famtastic/shay-shay && uv run python -m shay_cli.main intelligence control-plane show-universal` returned the shared JSON truth surface successfully after export.
+- Direct import validation against `shay-agent-os/components/swarm/brain_client.py` showed the exported implementation task-family policy resolves the shared bridge chain, blocks Codex builder routes, and leaves `glm-5.2` at the front of the `famtastic-by-the-numbers` v1 worker-pool primary route list.
+
+### Known Gaps opened
+- The shared route export is now freshness-checked at runtime from `shay-agent-os`, but there is still no true daemon/file-watch publisher or git-hook that republishes the truth immediately on every edit outside normal command/runtime access.
+- Full provider/model metadata from the shared truth still is not consumed as a first-class scheduler object inside `shay-agent-os`; the bridge now enforces task-family brain policy and freshness, but not a complete dynamic worker-pool/runtime budget engine.
+- Codex is no longer ambient in default builder/review/browser/orchestrator preference lists, but it still exists in the provider registry for explicit operator use and future opt-in premium/escalation lanes.
+
+## 2026-06-24 — Shared swarm runtime logic truth surface
+
+Added `obsidian/01-Shay-Platform/SHAY-SWARM-RUNTIME-LOGIC.md` as the canonical shared-session swarm-runtime note so the current Shay swarm no longer has to be reconstructed from scattered code, post-review notes, and routing docs. The new note grounds the active runtime against `shay-agent-os/components/swarm/swarm_orchestrator.py`, `shay-agent-os/components/swarm/local_swarm_dispatcher.py`, `shay-agent-os/components/swarm/swarm_graph.py`, and `shay-agent-os/components/swarm/test_swarm.py`, then ties those code surfaces to the current routing doctrine in `shay-shay/docs/agent-template-routing-matrix-2026-06-24.md` and the dispatch logic in `obsidian/01-Shay-Platform/CAPABILITY-ENGINE.md`. It explicitly separates what is lane-proven now (orchestrator shell, dispatcher shell, trust/recovery shell) from what is still partial (scaffold-grade DAG executor, benchmark-seeded routing defaults, not-yet-measured task-to-model truth), so future sessions stop overclaiming a finished production swarm.
+
+### Verified
+- `python3 -m py_compile /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/swarm_orchestrator.py /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/local_swarm_dispatcher.py /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/swarm_graph.py /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm/test_swarm.py` passed.
+- `cd /Users/famtasticfritz/famtastic/shay-agent-os/components/swarm && python3 test_swarm.py` passed `message_bus`, `goal_loop`, `trust_mode`, `error_recovery`, and `full_orchestrator`, which confirms the current orchestrator shell still runs end-to-end on this host.
+- The shared truth note cites the current runtime code paths plus the live routing/capability docs instead of paraphrasing from memory.
+
+### Known Gaps opened
+- `shay-agent-os/components/swarm/swarm_graph.py` is still scaffold-grade and should not be described as a finished DAG executor.
+- The benchmark-runner / scorecard / lane-audit command surfaces described in the Shay routing docs still are not implemented as first-class CLI commands.
+- The worker-pool integration test still failed its `simple`-tier qwen path once with `Ollama request timed out`, even though the broader orchestrator test passed afterward; the local simple-tier worker lane needs tuning or a more reliable default.
+- Redis was unavailable in the integration probe (`No module named 'redis'`), so `MessageBus` verified via its in-memory fallback rather than the intended Redis-backed path.
+- The shared note consolidates truth, but no auto-generated “swarm status book” command exists yet to keep it synchronized for free.
 
 ## 2026-06-24 — Shay live model-probe command + capability registry routing hooks
 
@@ -24,6 +191,10 @@ Turned the model-claims research lane inside `shay-shay` into an operational tru
 - Reasoning capability is still inferred from claims/overrides today; there is no dedicated live reasoning-quality probe yet.
 - `FAMTASTIC-STATE.md` was refreshed at the header/milestone layer for this structural slice, but the broader ecosystem document still needs a future full sweep if more control-plane surfaces land in rapid succession.
 
+## 2026-06-25 — FAMtastic By the Numbers live PayPal proof complete + mobile hero badge fix
+Upgraded `apps/famtastic-by-the-numbers` from MySQL-only closeout readiness into full live PayPal proof by copying real PayPal credentials into the app-local `.env`, changing `PREMIUM_PRICE_CENTS` from `2` to `100`, keeping MySQL persistence active, and then validating the real-money lane end-to-end. Verified `scripts/verify-paypal-config.js`, live `/api/health` + `/api/config` truth (`paymentMode=live`, `persistenceMode=mysql`, `premiumPriceCents=100`), a non-capturing `POST /api/paypal/create-order`, Fritz's successful real $1 purchase, confirmed return-to-app behavior, and confirmed reload/restore persistence. Updated `README.md`, `GAPS.md`, `PRODUCTION-CLOSEOUT-PLAN.md`, `OPERATOR-CLOSEOUT-CHECKLIST.md`, and `.env.closeout.example` so the docs now reflect completed web proof instead of a remaining user-owned payment step.
+
+Upgraded `apps/famtastic-by-the-numbers` from partial proof mode into a MySQL-backed closeout lane and then all the way through live web proof. Added `scripts/bootstrap-local-mysql.sh`, `scripts/verify-db.js`, `.env.closeout.example`, `tests/smoke-local-proof.mjs`, `OPERATOR-CLOSEOUT-CHECKLIST.md`, and a new closeout-oriented `tests/smoke.mjs`, while `lib/config.js` now derives the premium CTA from runtime price instead of lying with a stale `$22` label. Verified with `brew services start mysql`, `npm run db:bootstrap-local`, `set -a && source ./.env && set +a && npm run migrate`, `set -a && source ./.env && set +a && npm run verify-db`, `curl http://127.0.0.1:4174/api/health`, `curl http://127.0.0.1:4174/api/config`, live PayPal config/order preflight, Fritz's successful real $1 purchase, confirmed return-to-app behavior, and confirmed reload/restore persistence. Follow-on bugfix: the home-page mobile `Soul Urge` badge overlap was fixed in `styles.css` with mobile-specific spacing and badge repositioning.
 ## 2026-06-24 — FAMtastic By the Numbers premium architecture + proof mode
 
 Upgraded `apps/famtastic-by-the-numbers` from a static free-chart surface into a small full-stack premium-ready app instead of leaving monetization and persistence as concept art. The slice adds `server.js`, `lib/config.js`, `lib/paypal.js`, `lib/db.js`, `.env.example`, `scripts/migrate-db.js`, `package.json`, and auto-created `data/dev-store.json` support alongside the earlier `index.html`, `styles.css`, `app.js`, `README.md`, and `tests/smoke.mjs`. Runtime config now controls the product name, support email, price, CTA copy, and premium headings; API routes now expose `/api/health`, `/api/config`, `/api/purchase/status`, `/api/purchase/restore`, `/api/paypal/create-order`, and `/api/paypal/capture-order`; persistence now supports both MySQL production mode and a JSON dev-store fallback for local proofing when hosting-only env is unavailable. The frontend now stores the generated chart context automatically, supports durable premium unlock state + restore-by-email behavior, and the compatibility layer now looks at Life Path, Expression, Soul Urge, and Personality intersections instead of only a Life Path teaser.
@@ -6970,3 +7141,43 @@ and lead persistence/notify env vars are unset (function returns 200 but stores
 nothing until configured); (3) `ABOS_BOOKING_URL` is blank — CTAs scroll to the
 form until a Cal.com/Calendly URL is set; (4) social-proof row uses generic
 placeholders pending real logos/testimonials; (5) DNS not pointed.
+
+- FAMtastic Designs backend v1 checkpoint added a guarded local PayPal proof lane, local email-event fallback logging, and Directus setup assets under `sites/site-famtastic-designs/directus/`; Docker daemon availability is now the gating dependency for proving local Directus admin runtime.
+
+
+## 2026-07-02 — Shay intelligence autonomy governed loop
+
+Shay `shay-shay` now has a bounded autonomy layer for the intelligence loop. New files: `agent/intelligence_governance.py` defines `IntelligenceLoopConfig`, config parsing, generative-reflection fallback, pointer risk classification, pointer promotion decisions, and staged capability reconciliation; `agent/ambient_context.py` defines read-only ambient connector primitives (`LocalArtifactConnector`, `ProcessSnapshotConnector`, `SessionRecentConnector`) with TTL/source/privacy metadata; `agent/swarm_telemetry.py` defines the JSONL run ledger (`SwarmRunLedger`, `LaneRecord`, `lane_timer`). `agent/intelligence_loop.py::run_intelligence_loop_slices()` now accepts optional config and emits `generative-reflection.json`, `pointer-promotions.json`, `capability-review-queue.jsonl`, and `ambient-context.json` in addition to the existing closeout artifacts.
+
+Governance remains explicit: canonical prompt memory and `shay_cli/intelligence_seed.py` are not silently mutated; low-risk pointer candidates can be classified for auto-promotion, while high-risk/persona/authority/secret/payment-adjacent material routes to review. The default generative lane is disabled-safe and falls back to deterministic local synthesis if no client/provider is configured. Ambient context is local/read-only by default; calendar, message, and screen connectors remain permissioned future integrations.
+
+Verification: focused pytest suites passed (`tests/agent/test_intelligence_governance.py`, `tests/agent/test_intelligence_loop.py`, `tests/agent/test_intelligence_prefetch.py`, `tests/test_intelligence_layer.py` => 93 passed; `tests/agent/test_memory_provider.py`, `tests/run_agent/test_memory_sync_interrupted.py` => 78 passed) and `python -m compileall agent shay_cli run_agent.py` passed. HyperSwarm telemetry for the implementation pass is stored under `~/.shay/runtime/swarm-runs/intelligence-autonomy-20260702T114438/`.
+
+Known gaps: no real paid/auxiliary generative provider is wired yet; token/cost data is recorded as unavailable unless the runtime exposes it; external ambient connectors are interface-only until Fritz grants permission and credentials; capability reconciliation stages review records but does not apply patches automatically.
+
+## 2026-07-02 — FAMtastic By the Numbers Pass 1 web completion
+
+`apps/famtastic-by-the-numbers/` now treats all web-facing product functions as Pass 1 scope. `index.html` adds a method/privacy section with lineage, master-number, Y-as-consonant, and email/data-use disclosures; `app.js` adds monthly/day guidance, composite compatibility numbers, friction-to-repair mapping, local reading history, encoded `?chart=` share loading, and stronger share fallback behavior. `tests/smoke-local-proof.mjs` and `tests/smoke.mjs` were updated to assert the new web completion surfaces. PWA/native wrapper work, Google Play Billing, and Play Store checklisting remain intentionally deferred until after Fritz reviews the completed web version.
+
+## 2026-07-22 — runtime-vnext full pipeline (Milestones B–H)
+
+`site-studio/runtime-vnext/` now contains a complete, provider-agnostic, deterministic site build pipeline. The pipeline replaces the Claude-dependent monolith in `server.js` with 22 modular workers registered in `lib/site-build-registry.js` under the `deterministic` family. All workers use `execFileSync` (not `exec`) and process.hrtime.bigint() for timing.
+
+**Worker inventory by milestone:**
+- B (bootstrap): `repo-bootstrap-runner.js` (package.json, .gitignore, README), `config-scaffold-runner.js` (netlify.toml, .env files)
+- C planning: `architecture-decider-runner.js` (single-page/multi-page/hybrid/auto from `architecture_preference`), `sitemap-planner-runner.js` (SiteManifest + PageManifest[])
+- C content: `page-copy-runner.js` (ContentPacket from BuildRequest fields), `design-token-runner.js` (4 mood-based palettes → CSS custom props in `css/tokens.css`), `js-behavior-runner.js` (nav.js, smooth-scroll.js, section-observer.js for single-page, form-enhance.js when contact present)
+- C build: `page-builder-runner.js` (valid HTML5; accepts `contentPacket` OR `contentPackets[]` + page_id lookup; XSS-safe via `esc()`), `shared-assets-runner.js` (production CSS with @media 768px, main.js), `assembly-runner.js` (sitemap.xml, robots.txt, build-manifest.json; reads from `siteManifest.pages`)
+- D (non-blocking): `component-selector-runner.js` (built-in map, deferred for unknowns), `custom-component-builder-runner.js` (HTML stub), `media-planner-runner.js` (has_blocking_media always false), `media-generation-runner.js` (SVG placeholders, deferred for generate)
+- E (QA/proof): `seo-pack-runner.js` (≤60 char title, ≤155 char desc, LocalBusiness schema, sitemap/robots), `structural-qa-runner.js` (file-level checks), `content-qa-runner.js` (biz name, no placeholder leakage), `browser-qa-runner.js` (puppeteer with `SKIP_BROWSER_QA=1` env flag, graceful degrade), `proof-curator-runner.js` (ProofReport to reports/proof-report.json), `gap-logger-runner.js` (reports/gap-log.json)
+- F (deploy): `netlify-staging-deploy-runner.js` (opt-in via `deploy.staging_deploy=true`; execFileSync), `prod-deploy-router-runner.js` (opt-in via `deploy.prod_deploy=true`; blocked when proofReport=red)
+
+**Recipe:** `recipes/full-site-build.yaml` — 20 stages, foreach fanout for per-page workers, expression chaining via `{{stages.X.outputs.result.field}}`
+
+**Operator bridge (Milestone G):** `server-bridge.js` exports `runSiteBuild(buildRequest)`. Opt-in in `server.js` at `POST /api/vnext-build` behind `FAMTASTIC_USE_RUNTIME_VNEXT=1`.
+
+**Legacy compat (Milestone H):** `legacy-compat.js` normalizes flat legacy shape to canonical BuildRequest. LEGACY-AUDIT.md documents the de-authorization gate sequence (shadow-run parity required before removing legacy functions from server.js).
+
+**Tests:** 265/265 pass across 16 test files. New files: milestone-b.test.js, milestone-c.test.js, milestone-c-build.test.js, milestone-d.test.js, milestone-e.test.js, milestone-f.test.js, server-bridge.test.js
+
+**Known gaps:** (1) browser-qa requires `SKIP_BROWSER_QA=1` in test environments where puppeteer Chrome launch hangs; (2) LLM-powered content generation not wired (page-copy is deterministic from spec); (3) paid image generation returns `deferred` pending provider adapter; (4) legacy server.js build path NOT removed yet — pending shadow-run parity proof (gate 4 in LEGACY-AUDIT.md).

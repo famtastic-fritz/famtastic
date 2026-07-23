@@ -6,7 +6,7 @@ permalink: famtastic/01-shay-platform/agent-capability-matrix
 
 # Agent Capability Matrix
 
-Last updated: 2026-06-17 (reality-class second pass: separated curated inventory from proof-backed live surfaces for core agents, channels, revenue tools, and uncensored-LLM rows; preserves prior 2026-06-16 runtime backfill, 2026-06-15 shared-vault milestone, and 2026-06-02 humanize-writing install milestone)
+Last updated: 2026-07-23 (added the Site Studio runtime-vnext modular baseline as a proof-backed callable capability while preserving the earlier 2026-06-17 reality-class second pass, 2026-06-16 runtime backfill, 2026-06-15 shared-vault milestone, and 2026-06-02 humanize-writing install milestone)
 
 ## Legend
 
@@ -169,7 +169,7 @@ Confirmed in `shay-agent-os/AGENTS.md`.
 | Tool | Status | Reality class | Proof surface | Cost | Best For |
 |------|--------|---------------|---------------|------|----------|
 | **Stripe** | ❌ Not installed | seeded_target | curated inventory only | 2.9% + 30¢ | Billing, subscriptions |
-| **FAMtastic Site Studio** | 🔧 In progress | documented_present | FAMtastic repo doctrine + active project context; exact runtime/deploy state varies by workspace | API usage | Site factory |
+| **FAMtastic Site Studio** | 🔧 In progress | live_verified | live localhost Studio on `http://127.0.0.1:3334/` + `site-studio/runtime-vnext/SITE-STUDIO-CALLABLE-CONTRACT-2026-07-23.md` + passing runtime-vnext seam/contract tests | API usage | Site factory with a callable modular baseline; live proof-backed build/rebuild lane, but backend decomposition is still incomplete |
 | **Media Studio** | 🔧 In progress | curated_partial | strategic direction is documented, but install/runtime surface is not yet unified in one proof-bearing control plane | API usage | Logo, brand, media |
 | **Component Studio** | ❌ Not started | seeded_target | strategic target only | API usage | Reusable components |
 

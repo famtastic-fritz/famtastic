@@ -1,0 +1,752 @@
+{
+  "readSpec_definition": [
+    {
+      "line": 153,
+      "snippet": "function readSpec() {"
+    }
+  ],
+  "writeSpec_definition": [
+    {
+      "line": 231,
+      "snippet": "function writeSpec(spec, options = {}) {"
+    }
+  ],
+  "readSpec_calls": [
+    {
+      "line": 153,
+      "snippet": "readSpec() {"
+    },
+    {
+      "line": 567,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 664,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 704,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1108,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1223,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1233,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1243,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1397,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1430,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1437,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1566,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1593,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1602,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1753,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1833,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1870,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1881,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1927,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1957,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 1971,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2023,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2047,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2263,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2292,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2413,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2604,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2703,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2722,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 2739,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 3004,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 3278,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 4497,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 4587,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 4738,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 4802,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 4893,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 4944,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5102,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5176,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5224,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5284,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5306,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5334,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5389,
+      "snippet": "readSpec().media_specs || []).length;"
+    },
+    {
+      "line": 5392,
+      "snippet": "readSpec().media_specs || []).length;"
+    },
+    {
+      "line": 5406,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5568,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5575,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 5696,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 6599,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 6620,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 6632,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 7521,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 9261,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 9319,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 9345,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 9925,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 10186,
+      "snippet": "readSpec());"
+    },
+    {
+      "line": 10373,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 10667,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 10710,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 10807,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 11431,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 11637,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 11853,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 12237,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 12249,
+      "snippet": "readSpec().video_jobs || []);"
+    },
+    {
+      "line": 12991,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 13003,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 13017,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 13034,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 13043,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 14130,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 14376,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 15238,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 15295,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 15546,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 15562,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 15808,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 16490,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 16508,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 16548,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 16605,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 16718,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 16849,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 17002,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 17460,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 17701,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 17941,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 18021,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 18109,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 18184,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 18236,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 18300,
+      "snippet": "readSpec())"
+    },
+    {
+      "line": 18304,
+      "snippet": "readSpec());"
+    },
+    {
+      "line": 18308,
+      "snippet": "readSpec()));"
+    },
+    {
+      "line": 18314,
+      "snippet": "readSpec());"
+    },
+    {
+      "line": 18819,
+      "snippet": "readSpec());"
+    },
+    {
+      "line": 19019,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19064,
+      "snippet": "readSpec(), { last_verification: verifyResult }));"
+    },
+    {
+      "line": 19076,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19199,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19223,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19230,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19272,
+      "snippet": "readSpec());"
+    },
+    {
+      "line": 19273,
+      "snippet": "readSpec());"
+    },
+    {
+      "line": 19293,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19484,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19529,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19541,
+      "snippet": "readSpec();"
+    },
+    {
+      "line": 19683,
+      "snippet": "readSpec();"
+    }
+  ],
+  "writeSpec_calls": [
+    {
+      "line": 183,
+      "snippet": "writeSpec(_specCache);"
+    },
+    {
+      "line": 231,
+      "snippet": "writeSpec(spec, options = {}) {"
+    },
+    {
+      "line": 721,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1228,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1440,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1484,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1519,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1575,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1595,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1766,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1838,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1873,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1959,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 1973,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2035,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2093,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2265,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2527,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2710,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2725,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 2731,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 4784,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 4887,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 4967,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5207,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5213,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5253,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5275,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5382,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5642,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 5707,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 6607,
+      "snippet": "writeSpec(specNow);"
+    },
+    {
+      "line": 6699,
+      "snippet": "writeSpec(spec, {"
+    },
+    {
+      "line": 9381,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 9409,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 12245,
+      "snippet": "writeSpec(spec, { source: 'writeVideoJob' });"
+    },
+    {
+      "line": 12997,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 13008,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 13045,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 14132,
+      "snippet": "writeSpec(currentSpec);"
+    },
+    {
+      "line": 14383,
+      "snippet": "writeSpec(currentSpec);"
+    },
+    {
+      "line": 15446,
+      "snippet": "writeSpec(spec, { source: 'fillImageSlotsAfterBuild' });"
+    },
+    {
+      "line": 15555,
+      "snippet": "writeSpec(spec, { source: 'runPostProcessing:structural_index' });"
+    },
+    {
+      "line": 16510,
+      "snippet": "writeSpec(builtSpec, { source: 'finishParallelBuild' });"
+    },
+    {
+      "line": 16608,
+      "snippet": "writeSpec(vSpec);"
+    },
+    {
+      "line": 16951,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 17014,
+      "snippet": "writeSpec(specSI, { source: 'surgical_index', mutationLevel: 'field', mutationTarget: hit.field_id, newValue: newText });"
+    },
+    {
+      "line": 17467,
+      "snippet": "writeSpec(logoSpec);"
+    },
+    {
+      "line": 17708,
+      "snippet": "writeSpec(logoSpec);"
+    },
+    {
+      "line": 17969,
+      "snippet": "writeSpec(currentSpec);"
+    },
+    {
+      "line": 18215,
+      "snippet": "writeSpec(bsSpec);"
+    },
+    {
+      "line": 19024,
+      "snippet": "writeSpec(specForImport);"
+    },
+    {
+      "line": 19064,
+      "snippet": "writeSpec(Object.assign(readSpec(), { last_verification: verifyResult }));"
+    },
+    {
+      "line": 19176,
+      "snippet": "writeSpec(fillSpec);"
+    },
+    {
+      "line": 19207,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 19235,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 19295,
+      "snippet": "writeSpec(updated);"
+    },
+    {
+      "line": 19508,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 19633,
+      "snippet": "writeSpec(spec);"
+    },
+    {
+      "line": 19660,
+      "snippet": "writeSpec(spec);"
+    }
+  ],
+  "SPEC_FILE_calls": [
+    {
+      "line": 82,
+      "snippet": "SPEC_FILE() { return path.join(SITE_DIR(), 'spec.json'); }"
+    },
+    {
+      "line": 155,
+      "snippet": "SPEC_FILE())) {"
+    },
+    {
+      "line": 157,
+      "snippet": "SPEC_FILE(), 'utf8'));"
+    },
+    {
+      "line": 202,
+      "snippet": "SPEC_FILE(), JSON.stringify(_specCache, null, 2));"
+    },
+    {
+      "line": 211,
+      "snippet": "SPEC_FILE() + '.tmp';"
+    },
+    {
+      "line": 213,
+      "snippet": "SPEC_FILE());"
+    },
+    {
+      "line": 217,
+      "snippet": "SPEC_FILE()}: ${e.message}`);"
+    },
+    {
+      "line": 242,
+      "snippet": "SPEC_FILE() + '.tmp';"
+    },
+    {
+      "line": 244,
+      "snippet": "SPEC_FILE()); // atomic on POSIX \u2014 all-or-nothing, no corrupt mid-writes"
+    },
+    {
+      "line": 1119,
+      "snippet": "SPEC_FILE(),"
+    },
+    {
+      "line": 20923,
+      "snippet": "SPEC_FILE(), 'utf8')); normalizeTierAndMode(s); return s; } catch { return {}; } }, // L17806"
+    }
+  ]
+}

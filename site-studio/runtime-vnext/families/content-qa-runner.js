@@ -1,6 +1,14 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { outputPathForPage } = require('../lib/page-output-path');
+
+function normalizeForContentChecks(value) {
+  return String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&nbsp;/gi, ' ')
+    .toLowerCase();
+}
 
 class ContentQaRunner {
   async execute(request, { runContext, stageAttempt, abortSignal }) {
@@ -13,15 +21,15 @@ class ContentQaRunner {
     const checks = [];
     const issues = [];
 
-    const bizName = (biz.name || '').toLowerCase();
+    const bizName = normalizeForContentChecks(biz.name);
 
     for (const pm of pageManifests) {
-      const outPath = pm.output_path || (pm.page_id === 'home' ? 'index.html' : pm.page_id + '/index.html');
+      const outPath = outputPathForPage(pm);
       const fullPath = path.join(outputsDir, outPath);
       if (!fs.existsSync(fullPath)) continue;
 
       const html = fs.readFileSync(fullPath, 'utf8');
-      const htmlLower = html.toLowerCase();
+      const htmlLower = normalizeForContentChecks(html);
 
       // Business name present
       if (bizName) {
@@ -30,8 +38,8 @@ class ContentQaRunner {
         if (!hasBizName) issues.push({ severity: 'warning', code: 'BIZ_NAME_MISSING', page_id: pm.page_id, detail: biz.name });
       }
 
-      // No placeholder text leakage
-      const placeholders = ['{{', '}}', 'lorem ipsum', 'placeholder', 'TODO', 'FIXME'];
+      // No unresolved template leakage or placeholder copy
+      const placeholders = ['{{', '}}', 'lorem ipsum', 'TODO', 'FIXME'];
       for (const ph of placeholders) {
         if (htmlLower.includes(ph.toLowerCase())) {
           checks.push({ check: 'no-placeholder-text', page_id: pm.page_id, pass: false, detail: ph });

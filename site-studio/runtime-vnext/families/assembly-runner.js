@@ -1,12 +1,14 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { outputPathForPage } = require('../lib/page-output-path');
 
 class AssemblyRunner {
   async execute(request, { runContext, stageAttempt, abortSignal }) {
     const start = process.hrtime.bigint();
     const b = request.buildRequest || {};
     const sm = request.siteManifest || {};
+    const pageManifests = request.pageManifests || [];
     const pageArtifacts = request.pageArtifacts || [];
     const sharedAssetsReport = request.sharedAssetsReport || {};
     const seoData = request.seoData || {};
@@ -19,7 +21,7 @@ class AssemblyRunner {
     const canonical = 'https://' + (siteTag) + '.netlify.app';
 
     // Generate sitemap.xml
-    const pages = sm.pages || [];
+    const pages = sm.pages || pageManifests || [];
     const sitemapUrls = pages.map(p =>
       `  <url>\n    <loc>${canonical}${p.route === '/' ? '' : p.route}</loc>\n  </url>`
     ).join('\n');
@@ -43,7 +45,7 @@ ${sitemapUrls}
     const expectedPages = pages.map(p => ({
       page_id: p.page_id,
       route: p.route,
-      output_path: p.route === '/' ? 'index.html' : p.route.replace(/^\//, '').replace(/\/$/, '') + '.html',
+      output_path: outputPathForPage(p),
     }));
 
     // Check which pages exist in outputs

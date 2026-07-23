@@ -124,6 +124,28 @@ describe('BrowserQaRunner', () => {
     expect(res.result.status).toBe('deferred');
     expect(res.result.qa_type).toBe('browser');
   });
+
+  it('runs playwright browser QA against flat multi-page outputs', async () => {
+    const { runContext, stageAttempt, abortSignal } = makeCtx();
+    fs.mkdirSync(path.join(runContext.workspace_root, 'outputs', 'css'), { recursive: true });
+    fs.mkdirSync(path.join(runContext.workspace_root, 'outputs', 'js'), { recursive: true });
+    fs.writeFileSync(path.join(runContext.workspace_root, 'outputs', 'css', 'styles.css'), 'body{font-family:sans-serif}');
+    fs.writeFileSync(path.join(runContext.workspace_root, 'outputs', 'css', 'tokens.css'), ':root{--brand:#111}');
+    fs.writeFileSync(path.join(runContext.workspace_root, 'outputs', 'js', 'nav.js'), 'console.log("nav ok")');
+    fs.writeFileSync(path.join(runContext.workspace_root, 'outputs', 'js', 'smooth-scroll.js'), 'console.log("smooth ok")');
+    fs.writeFileSync(path.join(runContext.workspace_root, 'outputs', 'js', 'main.js'), 'console.log("main ok")');
+    seedOutputPage(runContext.workspace_root, 'about.html', '<!DOCTYPE html><html><head><title>About</title><meta name="viewport" content="width=device-width" /><link rel="stylesheet" href="/css/styles.css" /></head><body><h1>About</h1><p>About page content with enough text to pass browser QA.</p><script src="/js/main.js"></script></body></html>');
+
+    const r = new BrowserQaRunner();
+    const res = await r.execute({
+      buildRequest: baseRequest,
+      pageManifests: [{ page_id: 'about', route: '/about', title: 'About' }],
+    }, { runContext, stageAttempt, abortSignal });
+
+    expect(res.result.provider).toBe('playwright');
+    expect(res.result.status).toBe('green');
+    expect(res.result.screenshots).toHaveLength(2);
+  });
 });
 
 describe('ProofCuratorRunner', () => {

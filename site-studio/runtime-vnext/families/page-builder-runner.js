@@ -1,6 +1,17 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { outputPathForPage } = require('../lib/page-output-path');
+
+function titleizeSectionId(sectionId) {
+  const words = String(sectionId || '')
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.toLowerCase() === 'cta'
+      ? 'CTA'
+      : word.charAt(0).toUpperCase() + word.slice(1));
+  return words.join(' ');
+}
 
 function esc(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -132,7 +143,10 @@ class PageBuilderRunner {
     const pm = request.pageManifest || {};
 
     // Support both single contentPacket and array of contentPackets from foreach chain
-    const contentPackets = request.contentPackets || [];
+    const rawContentPackets = request.contentPackets;
+    const contentPackets = Array.isArray(rawContentPackets)
+      ? rawContentPackets
+      : rawContentPackets ? [rawContentPackets] : [];
     const cp = request.contentPacket
       || contentPackets.find(c => c && c.page_id === pm.page_id)
       || contentPackets[0]
@@ -144,14 +158,14 @@ class PageBuilderRunner {
 
     // Determine output path
     const route = pm.route || '/';
-    let output_path = route === '/' ? 'index.html' : route.replace(/^\//, '').replace(/\/$/, '') + '.html';
+    let output_path = outputPathForPage(pm);
 
     // Build navigation links
     const pages = (b._site_pages || []);
     const navLinks = pages.length > 1
       ? pages.map(p => `<a href="${esc(p.route)}">${esc(p.title)}</a>`).join('\n      ')
       : (cp.sections || []).filter(s => s.id !== 'footer').map(s =>
-          `<a href="#${s.id}">${s.id.charAt(0).toUpperCase() + s.id.slice(1).replace(/-/g, ' ')}</a>`
+          `<a href="#${s.id}">${titleizeSectionId(s.id)}</a>`
         ).join('\n      ');
 
     const title = esc(seo.title || cp.meta_title || biz.name || 'Site');

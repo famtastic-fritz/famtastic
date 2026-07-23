@@ -1,5 +1,22 @@
 'use strict';
 
+function composeHeroBody(problem, desiredOutcome) {
+  const parts = [problem, desiredOutcome]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean);
+  return parts.join('. ');
+}
+
+function titleizeSectionId(sectionId) {
+  const words = String(sectionId || '')
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.toLowerCase() === 'cta'
+      ? 'CTA'
+      : word.charAt(0).toUpperCase() + word.slice(1));
+  return words.join(' ');
+}
+
 class PageCopyRunner {
   async execute(request, { runContext, stageAttempt, abortSignal }) {
     const start = process.hrtime.bigint();
@@ -14,7 +31,7 @@ class PageCopyRunner {
     const subheadline = pos.desired_outcome || '';
 
     const sectionMap = {
-      hero: { heading: biz.name || 'Welcome', body: (pos.problem || '') + (pos.desired_outcome ? '. ' + pos.desired_outcome : ''), cta: primary_cta },
+      hero: { heading: biz.name || 'Welcome', body: composeHeroBody(pos.problem, pos.desired_outcome), cta: primary_cta },
       services: { heading: 'Our Services', items: (ci.services || []).map(s => ({ name: s.name, description: s.description })) },
       'services-grid': { heading: 'Our Services', items: (ci.services || []).map(s => ({ name: s.name, description: s.description })) },
       'services-overview': { heading: 'What We Offer', items: (ci.services || []).slice(0, 3).map(s => ({ name: s.name, description: s.description })) },
@@ -35,7 +52,7 @@ class PageCopyRunner {
     };
 
     const sections = (pm.required_sections || []).map((sectionId) => {
-      const content = sectionMap[sectionId] || { heading: sectionId.replace(/-/g, ' '), text: biz.name || '' };
+      const content = sectionMap[sectionId] || { heading: titleizeSectionId(sectionId), text: biz.name || '' };
       return { id: sectionId, type: sectionId, content };
     });
 

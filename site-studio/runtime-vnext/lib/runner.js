@@ -135,12 +135,18 @@ class RecipeRunner {
           itemResults.push(result);
         }
 
-        // Store outputs for downstream stages
+        // Store outputs for downstream stages.
+        // Downstream expressions should receive the semantic stage result payload,
+        // not the transport wrapper ({ result, sideEffects, artifactReferences, ... }).
         const outputName = stage.outputs && stage.outputs[0] ? stage.outputs[0] : 'result';
+        const normalizedResults = items.length === 1
+          ? (itemResults[0] && itemResults[0].result !== undefined ? itemResults[0].result : itemResults[0])
+          : itemResults.map((entry) => (entry && entry.result !== undefined ? entry.result : entry));
         stageOutputs[stageId] = {
           outputs: {
-            [outputName]: items.length === 1 ? itemResults[0] : itemResults,
+            [outputName]: normalizedResults,
           },
+          raw: items.length === 1 ? itemResults[0] : itemResults,
         };
       }
 

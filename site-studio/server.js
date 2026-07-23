@@ -144,126 +144,24 @@ function getLastTestRun() {
   }
 }
 
-// --- Spec.json write-through cache ---
-// Single-process Node.js: all reads/writes go through these two functions.
-// Eliminates read-modify-write race conditions across concurrent handlers.
-let _specCache = null;
-let _specCacheTag = null; // tracks which TAG the cache belongs to
-
-function readSpec() {
-  if (_specCache && _specCacheTag === TAG) return _specCache;
-  if (fs.existsSync(SPEC_FILE())) {
-    try {
-      _specCache = JSON.parse(fs.readFileSync(SPEC_FILE(), 'utf8'));
-      _specCacheTag = TAG;
-      // Initialize revision counter from spec
-      _specRevision = _specCache._revision || 0;
-      // Lightweight schema check — warn on missing core fields but don't crash
-      if (_specCache && typeof _specCache === 'object') {
-        if (!_specCache.tag) console.warn(`[spec] ${TAG}: missing 'tag' field`);
-        if (!_specCache.site_name) console.warn(`[spec] ${TAG}: missing 'site_name' field`);
-        // Ensure arrays are actually arrays
-        if (_specCache.media_specs && !Array.isArray(_specCache.media_specs)) {
-          console.warn(`[spec] ${TAG}: media_specs is not an array, resetting`);
-          _specCache.media_specs = [];
-        }
-        // Normalize old-format media_specs (slot→slot_id, missing→empty, infer role)
-        if (Array.isArray(_specCache.media_specs)) {
-          let migrated = false;
-          _specCache.media_specs = _specCache.media_specs.map(s => {
-            if (s.slot_id && s.role && s.status !== 'missing') return s;
-            migrated = true;
-            const slotId = s.slot_id || s.slot || 'unknown';
-            const status = s.status === 'missing' ? 'empty' : (s.status || 'empty');
-            const role = s.role || (slotId.match(/hero/i) ? 'hero' : slotId.match(/logo/i) ? 'logo' : slotId.match(/gallery/i) ? 'gallery' : slotId.match(/team/i) ? 'team' : slotId.match(/service/i) ? 'service' : slotId.match(/testimonial/i) ? 'testimonial' : slotId.match(/favicon/i) ? 'favicon' : 'gallery');
-            return { ...s, slot_id: slotId, status, role, page: s.page || 'index.html' };
-          });
-          if (migrated) {
-            console.log(`[spec] ${TAG}: migrated old-format media_specs to slot-based format`);
-            writeSpec(_specCache);
-          }
-        }
-        if (_specCache.design_decisions && !Array.isArray(_specCache.design_decisions)) {
-          console.warn(`[spec] ${TAG}: design_decisions is not an array, resetting`);
-          _specCache.design_decisions = [];
-        }
-        // Migrate flat deploy fields to environments object
-        if (_specCache.deployed_url && !_specCache.environments) {
-          _specCache.environments = {
-            staging: {
-              provider: _specCache.deploy_provider || 'netlify',
-              site_id: _specCache.netlify_site_id || null,
-              url: _specCache.deployed_url,
-              deployed_at: _specCache.deployed_at || null,
-              state: 'deployed',
-            },
-          };
-          console.log(`[spec] ${TAG}: migrated flat deploy fields to environments.staging`);
-          fs.writeFileSync(SPEC_FILE(), JSON.stringify(_specCache, null, 2));
-        }
-        // L143 — normalize tier and derived famtastic_mode; write back if dirty (drift repair)
-        const { dirty: _tierDirty } = normalizeTierAndMode(_specCache);
-        // P0.2 schema repair-on-read — fill required fields with sensible defaults
-        // when missing. Does NOT default tag/site_name (those identify the site).
-        const { dirty: _schemaDirty } = normalizeRequiredFields(_specCache);
-        if (_tierDirty || _schemaDirty) {
-          console.log(`[spec] ${TAG}: spec normalized (tier=${_tierDirty}, schema=${_schemaDirty}) — writing drift repair`);
-          const _tierTmp = SPEC_FILE() + '.tmp';
-          fs.writeFileSync(_tierTmp, JSON.stringify(_specCache, null, 2));
-          fs.renameSync(_tierTmp, SPEC_FILE());
-        }
-      }
-    } catch (e) {
-      console.error(`[spec] Failed to parse ${SPEC_FILE()}: ${e.message}`);
-      _specCache = {};
-      _specCacheTag = TAG;
-    }
-  } else {
-    _specCache = {};
-    _specCacheTag = TAG;
-  }
-  return _specCache;
-}
-
-// Spec revision counter — monotonically increasing, persisted in spec._revision
-let _specRevision = 0;
-
-function writeSpec(spec, options = {}) {
-  const { source = 'unknown', mutationLevel, mutationTarget, oldValue, newValue } = options;
-
-  // Increment revision
-  _specRevision++;
-  spec._revision = _specRevision;
-  spec._last_modified = new Date().toISOString();
-
-  _specCache = spec;
-  _specCacheTag = TAG;
-  fs.mkdirSync(SITE_DIR(), { recursive: true });
-  const _specTmp = SPEC_FILE() + '.tmp';
-  fs.writeFileSync(_specTmp, JSON.stringify(spec, null, 2));
-  fs.renameSync(_specTmp, SPEC_FILE()); // atomic on POSIX — all-or-nothing, no corrupt mid-writes
-
-  // Append to mutation log if mutation details provided
-  if (mutationLevel && mutationTarget) {
-    const mutationLog = path.join(SITE_DIR(), 'mutations.jsonl');
-    const entry = {
-      timestamp: new Date().toISOString(),
-      level: mutationLevel,
-      target_id: mutationTarget,
-      action: options.action || 'update',
-      old_value: oldValue,
-      new_value: newValue,
-      source,
-      revision: _specRevision,
-    };
-    try { fs.appendFileSync(mutationLog, JSON.stringify(entry) + '\n'); } catch {}
-  }
-}
-
-function invalidateSpecCache() {
-  _specCache = null;
-  _specCacheTag = null;
-}
+// --- Spec.json store ---
+// Spec persistence and cache behavior now live in server/spec-store.js.
+const { createSpecStore } = require('./server/spec-store');
+const {
+  readSpec,
+  writeSpec,
+  invalidateSpecCache,
+  readSpecForSite,
+  writeSpecForSite,
+} = createSpecStore({
+  fs,
+  path,
+  getTag: () => TAG,
+  getSiteDir: () => SITE_DIR(),
+  getSpecFile: () => SPEC_FILE(),
+  normalizeTierAndMode,
+  normalizeRequiredFields,
+});
 
 // Initialize tool handlers with server context
 // TAG and HUB_ROOT are defined above; getSiteDir returns the mutable current SITE_DIR()
@@ -1074,13 +972,25 @@ app.use('/api/intelligence', require('./server/intelligence-routes')
 // Operator Workspace parallel-lane mounts (B/C/D/F). Each is a sibling module
 // — server.js stays orchestrator-only.
 app.use('/api/intelligence/actions', require('./server/intelligence-actions').createActionsRouter(() => SITE_DIR(), SITES_ROOT));
-app.use('/api/components', require('./server/component-routes').createComponentRouter());
+app.use('/api/components', require('./server/component-routes').createComponentRouter({
+  hubRoot: HUB_ROOT,
+  getDistDir: () => DIST_DIR(),
+  getTag: () => TAG,
+  readSpec,
+  writeSpec,
+  syncSkillFromComponent,
+  studioEvents,
+  STUDIO_EVENTS,
+}));
 app.use('/api/media', require('./server/media-routes').createMediaRouter(() => SITE_DIR(), SITES_ROOT));
 app.use('/api/refinement', require('./server/visual-refinement-routes').createRefinementRouter(() => SITE_DIR(), SITES_ROOT));
 app.use('/api/research', require('./server/research-routes').createResearchRouter(HUB_ROOT));
 app.use('/api/think-tank', require('./server/think-tank-routes').createThinkTankRouter(HUB_ROOT));
 app.use('/api/site-settings', require('./server/site-settings-routes').createSiteSettingsRouter(SITES_ROOT));
 app.use('/api/studio-workflows', require('./server/studio-workflows-routes').createStudioWorkflowsRouter(HUB_ROOT));
+
+const { registerStudioStateRoutes } = require('./server/studio-state-routes');
+const { broadcastJson, attachTerminalUpgradeHandler, setupFileWatcherRuntime } = require('./server/ws-runtime');
 
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
@@ -1103,145 +1013,38 @@ app.get('/api/logs/tail', (req, res) => {
   res.json({ count: lines.length, lines });
 });
 
-app.get('/api/deploy-info', (req, res) => {
-  try {
-    const spec = readSpec();
-    const envs = spec.environments || {};
-
-    // Hub repo info (cached at startup — doesn't change at runtime)
-
-    res.json({
-      local: {
-        url: `http://localhost:${PREVIEW_PORT}`,
-        status: 'running',
-        site_dir: SITE_DIR(),
-        dist_dir: DIST_DIR(),
-        spec_file: SPEC_FILE(),
-      },
-      staging: envs.staging ? {
-        url: envs.staging.url || null,
-        state: envs.staging.state || 'not deployed',
-        deployed_at: envs.staging.deployed_at || null,
-        provider: envs.staging.provider || null,
-        site_id: envs.staging.site_id || null,
-        custom_domain: envs.staging.custom_domain || null,
-      } : null,
-      production: envs.production ? {
-        url: envs.production.url || null,
-        state: envs.production.state || 'not deployed',
-        deployed_at: envs.production.deployed_at || null,
-        provider: envs.production.provider || null,
-        site_id: envs.production.site_id || null,
-        custom_domain: envs.production.custom_domain || null,
-        repo: envs.production.repo || null,
-      } : null,
-      hub_repo: _hubRepoCache,
-      site_repo: spec.site_repo || null,
-      // Backward compat
-      deployed: !!(envs.staging?.url || envs.production?.url),
-      url: envs.production?.url || envs.staging?.url || null,
-    });
-  } catch {
-    res.json({ local: {}, staging: null, production: null, repo: null, deployed: false });
-  }
+// Deploy + repo routes extracted to server/deploy-repo-routes.js.
+const { registerDeployRepoRoutes } = require('./server/deploy-repo-routes');
+registerDeployRepoRoutes({
+  app,
+  getWss: () => wss,
+  path,
+  previewPort: PREVIEW_PORT,
+  getSiteDir: () => SITE_DIR(),
+  getDistDir: () => DIST_DIR(),
+  getSpecFile: () => SPEC_FILE(),
+  getHubRepoCache: () => _hubRepoCache,
+  getTag: () => TAG,
+  isDeployInProgress: () => deployInProgress,
+  readSpec,
+  writeSpec,
+  checkNetlify,
+  runDeploy,
+  createSiteRepo,
 });
 
-// POST /api/deploy — transactional deploy endpoint.
-// P0.6 fix: the Deploy buttons used to ws.send a chat message ("deploy to staging")
-// which was vulnerable to classifier mis-routing and brain-route gating. This
-// endpoint is the structured contract: 4xx + reason on preflight failure (so the
-// caller knows the dispatch failed), 200 + dispatched on success.
-// See architecture/2026-04-27-p0.6-diagnostic.md (Finding 3).
-app.post('/api/deploy', async (req, res) => {
-  const env = (req.body && req.body.env) || 'staging';
-  if (env !== 'staging' && env !== 'production') {
-    return res.status(400).json({ ok: false, reason: 'invalid_env', details: `env must be 'staging' or 'production', got '${env}'` });
-  }
-  if (!TAG) {
-    return res.status(400).json({ ok: false, reason: 'no_active_site', details: 'No active site selected.' });
-  }
-  if (deployInProgress) {
-    return res.status(409).json({ ok: false, reason: 'deploy_in_progress', details: 'A deploy is already running.' });
-  }
-
-  // Preflight here so the caller gets a structured reason synchronously.
-  // runDeploy will redo the same checkNetlify probe — that's cheap (~3s) and harmless.
-  let netlify;
-  try {
-    netlify = await checkNetlify();
-  } catch (probeErr) {
-    netlify = { ok: false, reason: 'other', details: probeErr.message };
-  }
-  if (!netlify || !netlify.ok) {
-    return res.status(412).json({
-      ok: false,
-      reason: netlify && netlify.reason ? netlify.reason : 'other',
-      details: (netlify && netlify.details) || 'Netlify is not configured.',
-    });
-  }
-
-  // Build a broadcasting WS proxy so progress reaches every connected client,
-  // mirroring the triggerSiteBuild mockWs pattern.
-  const wsClients = [...wss.clients].filter(c => c.readyState === 1);
-  const broadcastWs = {
-    readyState: 1,
-    send: (data) => {
-      wsClients.forEach(client => {
-        if (client.readyState === 1) {
-          try { client.send(data); } catch {}
-        }
-      });
-    },
-  };
-
-  // Fire and return — actual deploy progress streams to WS clients.
-  runDeploy(broadcastWs, env).catch(err => {
-    console.error('[deploy] uncaught error in runDeploy:', err.message);
-  });
-  return res.json({ ok: true, dispatched: true, env, tag: TAG });
-});
-
-// Create production repo for the current site
-app.post('/api/create-site-repo', (req, res) => {
-  const client = [...wss.clients].find(c => c.readyState === 1);
-  if (!client) return res.status(400).json({ error: 'No WebSocket client connected' });
-  createSiteRepo(client);
-  res.json({ success: true, message: 'Creating site repo...' });
-});
-
-// Manually set repo path/remote for an environment (for adopting existing repos)
-// Set the site repo path/remote (for adopting existing repos)
-app.put('/api/site-repo', (req, res) => {
-  const { repoPath, remote } = req.body;
-  if (!repoPath) return res.status(400).json({ error: 'repoPath required' });
-  const resolvedPath = path.resolve(repoPath);
-  const home = require('os').homedir();
-  if (!resolvedPath.startsWith(home + path.sep) && resolvedPath !== home) {
-    return res.status(400).json({ error: 'repoPath must be under home directory' });
-  }
-
-  const spec = readSpec();
-  spec.site_repo = {
-    path: resolvedPath,
-    remote: remote || null,
-  };
-  writeSpec(spec);
-  res.json({ success: true, site_repo: spec.site_repo });
-});
-
-app.get('/api/spec', (req, res) => {
-  const spec = readSpec();
-  if (Object.keys(spec).length > 0) {
-    res.json(spec);
-  } else {
-    res.json({ error: 'No spec.json found' });
-  }
-});
-
-// Alias used by client code: wraps spec in { spec } envelope
-app.get('/api/site-info', (req, res) => {
-  const spec = readSpec();
-  res.json({ spec });
+registerStudioStateRoutes({
+  app,
+  readSpec,
+  getSiteDir: () => SITE_DIR(),
+  getDistDir: () => DIST_DIR(),
+  getTag: () => TAG,
+  getPreviewPort: () => PREVIEW_PORT,
+  listPages,
+  getCurrentPage: () => currentPage,
+  setCurrentPage: (page) => { currentPage = page; },
+  saveStudio,
+  isValidPageName,
 });
 
 // Serve conversation history
@@ -1356,29 +1159,9 @@ app.get('/api/server-info', (req, res) => {
 app.post('/api/restart', (req, res) => {
   res.json({ success: true, message: 'Server restarting...' });
   // Notify all WS clients
-  wss.clients.forEach(client => {
-    try { client.send(JSON.stringify({ type: 'server-restarting' })); } catch {}
-  });
+  broadcastJson(wss, { type: 'server-restarting' });
   // Graceful exit — wrapper script restarts the process
   setTimeout(() => gracefulShutdown(), 500);
-});
-
-// List pages and current page
-app.get('/api/pages', (req, res) => {
-  res.json({ pages: listPages(), currentPage });
-});
-
-// Set current page
-app.post('/api/pages/current', (req, res) => {
-  const page = req.body.page;
-  if (!page) return res.status(400).json({ error: 'page required' });
-  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
-  if (!fs.existsSync(path.join(DIST_DIR(), page))) {
-    return res.status(404).json({ error: 'Page not found' });
-  }
-  currentPage = page;
-  saveStudio();
-  res.json({ currentPage });
 });
 
 // List available templates
@@ -1392,39 +1175,7 @@ app.get('/api/templates', (req, res) => {
   res.json(templates);
 });
 
-// Studio state — brief, decisions, files, spec
-app.get('/api/studio-state', (req, res) => {
-  const spec = readSpec();
-  const stateFile = path.join(SITE_DIR(), 'state.json');
-  const state = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : {};
 
-  // Gather files
-  const files = [];
-  if (fs.existsSync(DIST_DIR())) {
-    const walk = (dir, prefix) => {
-      for (const f of fs.readdirSync(dir)) {
-        const full = path.join(dir, f);
-        const rel = prefix ? `${prefix}/${f}` : f;
-        if (fs.statSync(full).isDirectory()) {
-          walk(full, rel);
-        } else {
-          files.push({ name: rel, size: fs.statSync(full).size });
-        }
-      }
-    };
-    walk(DIST_DIR(), 'dist');
-  }
-
-  res.json({
-    tag: TAG,
-    lastUpdated: state.last_build || null,
-    brief: spec.design_brief || null,
-    decisions: (spec.design_decisions || []).filter(d => d.status === 'approved').slice(-10),
-    files,
-    spec,
-    previewUrl: `http://localhost:${PREVIEW_PORT}`,
-  });
-});
 
 function currentUploadCapacity() {
   const spec = readSpec();
@@ -6345,273 +6096,7 @@ ${lessons}
   }
 }
 
-// --- Component Library API ---
-
-// List all components in the library
-app.get('/api/components', (req, res) => {
-  const libPath = path.join(HUB_ROOT, 'components', 'library.json');
-  if (!fs.existsSync(libPath)) return res.json({ version: '1.0', components: [] });
-  try {
-    const lib = JSON.parse(fs.readFileSync(libPath, 'utf8'));
-    res.json(lib);
-  } catch { res.json({ version: '1.0', components: [] }); }
-});
-
-// Get a single component by ID
-app.get('/api/components/:id', (req, res) => {
-  const compPath = path.join(HUB_ROOT, 'components', req.params.id, 'component.json');
-  if (!fs.existsSync(compPath)) return res.status(404).json({ error: 'Component not found' });
-  try {
-    res.json(JSON.parse(fs.readFileSync(compPath, 'utf8')));
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-function normalizeComponentImportPayload(raw) {
-  const source = raw && typeof raw === 'object' ? raw : {};
-  const componentId = String(source.component_id || source.id || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 64);
-  if (!componentId) throw new Error('component_id required');
-
-  const htmlTemplate = String(source.html_template || source.html || '').trim();
-  if (!htmlTemplate) throw new Error('html_template required');
-
-  const normalized = {
-    component_id: componentId,
-    id: componentId,
-    name: String(source.name || componentId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
-    type: String(source.type || 'generic'),
-    version: String(source.version || '1.0'),
-    description: String(source.description || ''),
-    created_from: source.created_from || source.extracted_from || 'imported',
-    created_at: source.created_at || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    html_template: htmlTemplate,
-    css: source.css && typeof source.css === 'object' ? source.css : {
-      variables: source.css_variables || {},
-      local: source.css_local || source.css_text || '',
-    },
-    js: source.js && typeof source.js === 'object' ? source.js : {
-      local: source.js_local || source.js_text || '',
-    },
-    content_fields: Array.isArray(source.content_fields) ? source.content_fields : [],
-    slots: Array.isArray(source.slots) ? source.slots : [],
-    dependencies: source.dependencies && typeof source.dependencies === 'object'
-      ? source.dependencies
-      : { css: [], js: [], external: [], fonts: [] },
-    dependency_manifest: source.dependency_manifest && typeof source.dependency_manifest === 'object'
-      ? source.dependency_manifest
-      : null,
-    css_variables: source.css_variables || source.css?.variables || {},
-    slot_schema: Array.isArray(source.slot_schema) ? source.slot_schema : [],
-    field_schema: Array.isArray(source.field_schema) ? source.field_schema : [],
-    preview_assets: Array.isArray(source.preview_assets) ? source.preview_assets : [],
-    demo_assets: Array.isArray(source.demo_assets) ? source.demo_assets : [],
-    usage_count: Number(source.usage_count || 0),
-    tags: Array.isArray(source.tags) ? source.tags : [],
-  };
-
-  return normalized;
-}
-
-app.post('/api/components/import', (req, res) => {
-  try {
-    const component = normalizeComponentImportPayload(req.body && (req.body.component || req.body));
-    const compDir = path.join(HUB_ROOT, 'components', component.component_id);
-    fs.mkdirSync(compDir, { recursive: true });
-    fs.writeFileSync(path.join(compDir, 'component.json'), JSON.stringify(component, null, 2));
-    fs.writeFileSync(path.join(compDir, `${component.component_id}.html`), component.html_template);
-    if (component.css && component.css.local) {
-      fs.writeFileSync(path.join(compDir, `${component.component_id}.css`), String(component.css.local));
-    }
-    if (component.js && component.js.local) {
-      fs.writeFileSync(path.join(compDir, `${component.component_id}.js`), String(component.js.local));
-    }
-
-    const libPath = path.join(HUB_ROOT, 'components', 'library.json');
-    let lib = { version: '1.0', components: [] };
-    if (fs.existsSync(libPath)) {
-      try { lib = JSON.parse(fs.readFileSync(libPath, 'utf8')); } catch {}
-    }
-    lib.components = (lib.components || []).filter(c => (c.component_id || c.id) !== component.component_id);
-    lib.components.push({
-      id: component.component_id,
-      component_id: component.component_id,
-      name: component.name,
-      type: component.type,
-      version: component.version,
-      created_from: component.created_from,
-      created_at: component.created_at,
-      updated_at: component.updated_at,
-      field_count: component.content_fields.length,
-      slot_count: component.slots.length,
-      css_variables: Object.keys(component.css_variables || {}),
-      used_in: Array.isArray(component.sites_using) ? component.sites_using : [],
-      path: component.component_id,
-      description: component.description || `${component.type} component import`,
-    });
-    lib.last_updated = new Date().toISOString();
-    fs.writeFileSync(libPath, JSON.stringify(lib, null, 2));
-
-    syncSkillFromComponent(component);
-    res.json({ success: true, component });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Export a section from the current site as a component
-app.post('/api/components/export', (req, res) => {
-  const { page, section_id, component_id } = req.body;
-  if (!page || !component_id) return res.status(400).json({ error: 'page and component_id required' });
-
-  const pagePath = path.join(DIST_DIR(), page);
-  if (!fs.existsSync(pagePath)) return res.status(404).json({ error: 'Page not found' });
-
-  const html = fs.readFileSync(pagePath, 'utf8');
-  const $ = cheerio.load(html);
-
-  // Find the section by data-section-id or by order
-  let section;
-  if (section_id) {
-    section = $(`[data-section-id="${section_id}"]`);
-  }
-  if (!section || section.length === 0) {
-    // Fallback: find <section> or main content area
-    section = $('section').first();
-  }
-  if (!section || section.length === 0) {
-    return res.status(404).json({ error: 'Section not found' });
-  }
-
-  const sectionHtml = $.html(section);
-
-  // Extract CSS variables referenced in the section
-  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
-  const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
-  const varRefs = sectionHtml.match(/var\(--[^)]+\)/g) || [];
-  const cssVariables = {};
-  for (const ref of varRefs) {
-    const varName = ref.match(/--[^)]+/)?.[0];
-    if (!varName) continue;
-    const valMatch = css.match(new RegExp(`${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;]+)`));
-    if (valMatch) cssVariables[varName] = valMatch[1].trim();
-  }
-
-  // Extract fields from the section
-  const fields = [];
-  $('[data-field-id]', section).each((_, el) => {
-    fields.push({
-      id: $(el).attr('data-field-id'),
-      type: $(el).attr('data-field-type') || 'text',
-      default_value: $(el).text().trim(),
-    });
-  });
-
-  // Extract slots
-  const slots = [];
-  $('[data-slot-id]', section).each((_, el) => {
-    slots.push({
-      slot_id: $(el).attr('data-slot-id'),
-      role: $(el).attr('data-slot-role') || 'generic',
-    });
-  });
-
-  const component = {
-    component_id: component_id,
-    name: component_id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    type: section.attr('data-section-type') || 'generic',
-    version: '1.0',
-    created_from: TAG,
-    created_at: new Date().toISOString(),
-    html_template: sectionHtml,
-    css: { variables: cssVariables },
-    content_fields: fields,
-    slots,
-    usage_count: 1,
-    tags: [],
-  };
-
-  // ── Version tracking — bump version on re-export ────────────────────────
-  const compDir = path.join(HUB_ROOT, 'components', component_id);
-  const compJsonPath = path.join(compDir, 'component.json');
-  let existingComp = null;
-  let version = '1.0';
-  if (fs.existsSync(compJsonPath)) {
-    try {
-      existingComp = JSON.parse(fs.readFileSync(compJsonPath, 'utf8'));
-      // Bump minor version: 1.0 → 1.1 → 1.2, etc.
-      const [major, minor] = (existingComp.version || '1.0').split('.').map(Number);
-      version = `${major}.${(minor || 0) + 1}`;
-      component.version = version;
-      component.usage_count = (existingComp.usage_count || 0) + 1;
-      component.created_at = existingComp.created_at; // preserve original creation date
-      component.updated_at = new Date().toISOString();
-      console.log(`[components] Re-exported "${component_id}" → version ${version}`);
-    } catch {}
-  } else {
-    component.updated_at = component.created_at;
-  }
-  component.version = version;
-
-  // ── Write component to filesystem ────────────────────────────────────────
-  fs.mkdirSync(compDir, { recursive: true });
-  fs.writeFileSync(compJsonPath, JSON.stringify(component, null, 2));
-  fs.writeFileSync(path.join(compDir, `${component_id}.html`), sectionHtml);
-
-  // ── Update library index ──────────────────────────────────────────────────
-  const libPath = path.join(HUB_ROOT, 'components', 'library.json');
-  let lib = { version: '1.0', components: [] };
-  if (fs.existsSync(libPath)) {
-    try { lib = JSON.parse(fs.readFileSync(libPath, 'utf8')); } catch {}
-  }
-  const existingEntry = lib.components.find(c => (c.component_id || c.id) === component_id);
-  const usedIn = existingEntry?.used_in || [];
-  if (!usedIn.includes(TAG)) usedIn.push(TAG);
-
-  lib.components = lib.components.filter(c => (c.component_id || c.id) !== component_id);
-  lib.components.push({
-    id: component_id,
-    component_id,
-    name: component.name,
-    type: component.type,
-    version,
-    created_from: component.created_from,
-    created_at: component.created_at,
-    updated_at: component.updated_at,
-    field_count: fields.length,
-    slot_count: slots.length,
-    css_variables: Object.keys(cssVariables),
-    used_in: usedIn,
-    path: component_id,
-    description: `${component.type} component with ${fields.length} editable fields`,
-  });
-  lib.last_updated = new Date().toISOString();
-  fs.writeFileSync(libPath, JSON.stringify(lib, null, 2));
-
-  // ── Skill auto-sync — update .claude/skills/components/<type>/SKILL.md ───
-  syncSkillFromComponent(component);
-
-  // ── Spec ref — record component_ref in spec.content ─────────────────────
-  try {
-    const specNow = readSpec();
-    if (specNow.content && specNow.content[page]) {
-      if (!specNow.content[page].sections) specNow.content[page].sections = [];
-      const sectionId = section.attr('data-section-id') || component_id;
-      const sIdx = specNow.content[page].sections.findIndex(s => s.section_id === sectionId);
-      const sRef = { section_id: sectionId, component_ref: `${component_id}@${version}` };
-      if (sIdx >= 0) specNow.content[page].sections[sIdx] = { ...specNow.content[page].sections[sIdx], ...sRef };
-      else specNow.content[page].sections.push(sRef);
-      writeSpec(specNow);
-    }
-  } catch {}
-
-  studioEvents.emit(STUDIO_EVENTS.COMPONENT_INSERTED, { tag: TAG, component_id, version });
-  console.log(`[components] Exported "${component_id}" v${version} from ${page} (${fields.length} fields, ${slots.length} slots, ${Object.keys(cssVariables).length} CSS vars)`);
-  res.json({ success: true, component, field_count: fields.length, slot_count: slots.length });
-});
+// --- Component Library API extracted to server/component-routes.js ---
 
 // Content fields API — used by editable page view (Phase 2)
 app.get('/api/content-fields/:page', (req, res) => {
@@ -10221,52 +9706,25 @@ app.post('/api/autonomous-build', async (req, res) => {
 // POST /api/vnext-build — runtime-vnext operator bridge (opt-in via FAMTASTIC_USE_RUNTIME_VNEXT=1)
 // Accepts a canonical BuildRequest and runs the full deterministic pipeline.
 if (process.env.FAMTASTIC_USE_RUNTIME_VNEXT === '1') {
-  const vnextBridge = require('./runtime-vnext/server-bridge');
-  const { normalizeLegacyRequest } = require('./runtime-vnext/legacy-compat');
-  app.post('/api/vnext-build', async (req, res) => {
-    try {
-      const rawRequest = req.body;
-      if (!rawRequest || typeof rawRequest !== 'object') {
-        return res.status(400).json({ error: 'BuildRequest body required' });
-      }
-      const buildRequest = normalizeLegacyRequest(rawRequest);
-      const result = await vnextBridge.runSiteBuild(buildRequest);
-      res.json({ status: result.status, run_id: result.run_id, error: result.error || null });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  const { registerRuntimeVnextRoutes } = require('./runtime-vnext/register-routes');
+  registerRuntimeVnextRoutes({ app, getWss: () => wss, readSpec, tag: TAG });
   console.log('[vnext] runtime-vnext operator path active — POST /api/vnext-build');
 }
 
-// GET /api/build-status/:tag — polling endpoint for build completion
-app.get('/api/build-status/:tag', (req, res) => {
-  const tagParam = req.params.tag;
-  if (!tagParam || !/^[a-z0-9][a-z0-9-]*$/.test(tagParam)) {
-    return res.status(400).json({ error: 'invalid tag' });
-  }
-  const specPath = path.join(SITES_ROOT, tagParam, 'spec.json');
-  if (!fs.existsSync(specPath)) return res.status(404).json({ error: 'site not found' });
-  try {
-    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L7781
-    normalizeTierAndMode(spec); // in-memory only — status endpoint, no write-back
-    const distDir = path.join(SITES_ROOT, tagParam, 'dist');
-    const htmlFiles = fs.existsSync(distDir)
-      ? fs.readdirSync(distDir).filter(f => f.endsWith('.html') && !f.startsWith('_'))
-      : [];
-    res.json({
-      tag: tagParam,
-      state: spec.state || 'unknown',
-      building: buildInProgress && TAG === tagParam,
-      pages_built: htmlFiles.length,
-      pages: htmlFiles,
-      has_brief: !!(spec.client_brief || spec.design_brief),
-      fam_score: spec.fam_score || null,
-      deployed_url: spec.deployed_url || null,
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+// Runtime operational status routes extracted to server/runtime-status-routes.js.
+const { registerRuntimeStatusRoutes } = require('./server/runtime-status-routes');
+registerRuntimeStatusRoutes({
+  app,
+  fs,
+  path,
+  sitesRoot: SITES_ROOT,
+  getTag: () => TAG,
+  isBuildInProgress: () => buildInProgress,
+  readSpec,
+  writeSpec,
+  readSpecForSite,
+  listPages,
+  runBuildVerification,
 });
 
 // Research files API — serves research markdown for Phase 6 workspace
@@ -12305,32 +11763,6 @@ function getCharacterSiteDir(siteTag) {
   return tag ? path.join(SITES_ROOT, tag) : SITE_DIR();
 }
 
-function readSpecForSite(siteDir) {
-  const specPath = path.join(siteDir, 'spec.json');
-  if (!fs.existsSync(specPath)) return {};
-  try {
-    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L9764
-    normalizeTierAndMode(spec); // in-memory only — caller handles persistence via writeSpecForSite
-    return spec;
-  } catch { return {}; }
-}
-
-function writeSpecForSite(siteDir, spec) {
-  const specPath = path.join(siteDir, 'spec.json');
-  fs.mkdirSync(siteDir, { recursive: true });
-  // Preserve revision metadata from the current on-disk spec if not already set
-  if (!spec._revision && fs.existsSync(specPath)) {
-    try {
-      const existing = JSON.parse(fs.readFileSync(specPath, 'utf8'));
-      if (existing._revision)       spec._revision = existing._revision;
-      if (existing._last_modified)  spec._last_modified = existing._last_modified;
-    } catch {}
-  }
-  // Atomic write — matches the safety pattern used by the main writeSpec function
-  const tmpPath = specPath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(spec, null, 2));
-  fs.renameSync(tmpPath, specPath);
-}
 
 function broadcastAll(payload) {
   const msg = JSON.stringify(payload);
@@ -13040,24 +12472,6 @@ app.get('/api/revenue-card', (req, res) => {
     deployed_url: spec.deployed_url || null,
     custom_domain: spec.custom_domain || null,
   });
-});
-
-// GET /api/verify
-app.get('/api/verify', (req, res) => {
-  const spec = readSpec();
-  res.json(spec.last_verification || null);
-});
-
-app.post('/api/verify', (req, res) => {
-  const pages = listPages();
-  if (pages.length === 0) return res.json({ status: 'failed', checks: [], issues: ['No pages found'], timestamp: new Date().toISOString() });
-  const result = runBuildVerification(pages);
-  try {
-    const spec = readSpec();
-    spec.last_verification = result;
-    writeSpec(spec);
-  } catch {}
-  res.json(result);
 });
 
 app.post('/api/visual-verify', (req, res) => {
@@ -14236,6 +13650,55 @@ function routeToHandler(ws, requestType, userMessage, spec) {
       if (templateMatch) {
         ws.send(JSON.stringify({ type: 'status', content: `Building with ${templateMatch[1]} template...` }));
         runOrchestratorSite(ws, templateMatch[1]);
+      } else if (process.env.FAMTASTIC_USE_RUNTIME_VNEXT === '1') {
+        const vnextBridge = require('./runtime-vnext/server-bridge');
+        const { normalizeLegacyRequest } = require('./runtime-vnext/legacy-compat');
+        const pagesList = spec.pages || spec.design_brief?.must_have_sections || ['home'];
+        const rawRequest = {
+          siteTag: spec.tag || TAG,
+          siteName: spec.site_name || spec.business_name || TAG,
+          business_type: spec.business_type || spec.industry || 'service',
+          description: spec.business_description || spec.description || spec.design_brief?.goal || '',
+          location: spec.location || spec.city || '',
+          phone: spec.phone || spec.public_contact || '',
+          services: spec.services || [],
+          about: spec.about || spec.about_text || spec.design_brief?.audience || '',
+          audience: spec.target_audience || spec.design_brief?.audience || '',
+          cta: spec.cta || spec.design_brief?.primary_cta || 'Contact Us',
+          differentiators: spec.differentiators || [],
+          pages: pagesList,
+          architecture_preference: spec.architecture_preference,
+          rejected_patterns: spec.rejected_patterns || spec.design_brief?.avoid || [],
+          staging_deploy: false,
+          prod_deploy: false,
+        };
+
+        ws.send(JSON.stringify({ type: 'status', content: 'Building site via runtime-vnext...' }));
+        if (!buildInProgress) setBuildInProgress(true, ws);
+
+        (async () => {
+          try {
+            const buildRequest = normalizeLegacyRequest(rawRequest);
+            const result = await vnextBridge.runSiteBuild(buildRequest);
+            const proof = result.stageOutputs?.['proof-curator']?.result || result.stageOutputs?.['proof-curator']?.outputs?.result || null;
+            if (result.status === 'published' || result.status === 'succeeded') {
+              ws.send(JSON.stringify({
+                type: 'build_complete',
+                run_id: result.run_id,
+                dist_dir: result.dist_dir,
+                workspace_root: result.workspace_root,
+                proof,
+              }));
+              ws.send(JSON.stringify({ type: 'status', content: 'runtime-vnext build complete.' }));
+            } else {
+              ws.send(JSON.stringify({ type: 'error', content: result.error || `runtime-vnext build ended with status: ${result.status}` }));
+            }
+          } catch (err) {
+            ws.send(JSON.stringify({ type: 'error', content: err.message || 'runtime-vnext build failed' }));
+          } finally {
+            setBuildInProgress(false, ws);
+          }
+        })();
       } else {
         const pagesList = (spec.pages || spec.design_brief?.must_have_sections || ['home']).join(', ');
         ws.send(JSON.stringify({ type: 'status', content: 'Building site from brief...' }));
@@ -20546,38 +20009,7 @@ app.delete('/api/terminal/:termId', (req, res) => {
   res.json({ success: true });
 });
 
-// Terminal WebSocket upgrade — detect /terminal/:termId path
-server.on('upgrade', (request, socket, head) => {
-  const url = new URL(request.url, 'http://localhost');
-  const match = url.pathname.match(/^\/terminal\/(\d+)$/);
-  if (match) {
-    const termId = match[1];
-    const term = terminals.get(termId);
-    if (!term) { socket.destroy(); return; }
-
-    const termWss = new WebSocketServer({ noServer: true });
-    termWss.handleUpgrade(request, socket, head, (ws) => {
-      term.connections.add(ws);
-
-      term.ptyProcess.onData((data) => {
-        try { if (ws.readyState === 1) ws.send(data); } catch {}
-      });
-
-      ws.on('message', (data) => {
-        term.ptyProcess.write(typeof data === 'string' ? data : data.toString());
-      });
-
-      ws.on('close', () => {
-        term.connections.delete(ws);
-      });
-    });
-    return;
-  }
-  // Let the main wss handle non-terminal upgrades
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
-});
+attachTerminalUpgradeHandler({ server, wss, terminals });
 
 async function gracefulShutdown() {
   await endSession();
@@ -20675,78 +20107,14 @@ module.exports = {
 
 // --- File change detection ---
 // Watch server files for changes and notify clients when restart is needed
-const fileWatchers = [];
+const fileWatchers = setupFileWatcherRuntime({
+  fs,
+  path,
+  rootDir: __dirname,
+  wss,
+});
 function setupFileWatcher() {
-  const filesToWatch = [
-    path.join(__dirname, 'server.js'),
-    path.join(__dirname, 'public', 'index.html'),
-  ];
-  for (const filePath of filesToWatch) {
-    try {
-      let debounceTimer = null;
-      const watcher = fs.watch(filePath, () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          const fileName = path.basename(filePath);
-          console.log(`[file-watch] ${fileName} changed — restart recommended`);
-          wss.clients.forEach(client => {
-            try {
-              client.send(JSON.stringify({ type: 'restart-needed', file: fileName, timestamp: new Date().toISOString() }));
-            } catch {}
-          });
-        }, 2000);
-      });
-      fileWatchers.push(watcher);
-    } catch (err) {
-      console.log(`[file-watch] Could not watch ${path.basename(filePath)}: ${err.message}`);
-    }
-  }
-
-  // Watch css/ directory for changes
-  const cssDir = path.join(__dirname, 'public', 'css');
-  if (fs.existsSync(cssDir)) {
-    try {
-      let cssDebouce = null;
-      const cssWatcher = fs.watch(cssDir, (eventType, filename) => {
-        if (!filename || !filename.endsWith('.css')) return;
-        clearTimeout(cssDebouce);
-        cssDebouce = setTimeout(() => {
-          console.log(`[file-watch] css/${filename} changed — restart recommended`);
-          wss.clients.forEach(client => {
-            try {
-              client.send(JSON.stringify({ type: 'restart-needed', file: `css/${filename}`, timestamp: new Date().toISOString() }));
-            } catch {}
-          });
-        }, 2000);
-      });
-      fileWatchers.push(cssWatcher);
-    } catch (err) {
-      console.log(`[file-watch] Could not watch css/ directory: ${err.message}`);
-    }
-  }
-
-  // Watch js/ directory for client refresh-recommended changes
-  const jsDir = path.join(__dirname, 'public', 'js');
-  if (fs.existsSync(jsDir)) {
-    try {
-      let jsDebounce = null;
-      const jsWatcher = fs.watch(jsDir, (eventType, filename) => {
-        if (!filename || !filename.endsWith('.js')) return;
-        clearTimeout(jsDebounce);
-        jsDebounce = setTimeout(() => {
-          console.log(`[file-watch] js/${filename} changed — restart recommended`);
-          wss.clients.forEach(client => {
-            try {
-              client.send(JSON.stringify({ type: 'restart-needed', file: `js/${filename}`, timestamp: new Date().toISOString() }));
-            } catch {}
-          });
-        }, 2000);
-      });
-      fileWatchers.push(jsWatcher);
-    } catch (err) {
-      console.log(`[file-watch] Could not watch js/ directory: ${err.message}`);
-    }
-  }
+  return fileWatchers;
 }
 
 // Session 12 Phase 2 (W1, W2): worker queue startup cleanup.

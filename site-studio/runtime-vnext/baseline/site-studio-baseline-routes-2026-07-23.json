@@ -1,0 +1,817 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/logs/tail",
+    "line": 1098
+  },
+  {
+    "method": "GET",
+    "path": "/api/deploy-info",
+    "line": 1106
+  },
+  {
+    "method": "POST",
+    "path": "/api/deploy",
+    "line": 1155
+  },
+  {
+    "method": "POST",
+    "path": "/api/create-site-repo",
+    "line": 1205
+  },
+  {
+    "method": "PUT",
+    "path": "/api/site-repo",
+    "line": 1214
+  },
+  {
+    "method": "GET",
+    "path": "/api/spec",
+    "line": 1232
+  },
+  {
+    "method": "GET",
+    "path": "/api/site-info",
+    "line": 1242
+  },
+  {
+    "method": "GET",
+    "path": "/api/history",
+    "line": 1248
+  },
+  {
+    "method": "GET",
+    "path": "/api/assets",
+    "line": 1258
+  },
+  {
+    "method": "GET",
+    "path": "/api/config",
+    "line": 1275
+  },
+  {
+    "method": "GET",
+    "path": "/api/health",
+    "line": 1282
+  },
+  {
+    "method": "POST",
+    "path": "/api/proof-generate",
+    "line": 1290
+  },
+  {
+    "method": "POST",
+    "path": "/api/proof-campaign",
+    "line": 1305
+  },
+  {
+    "method": "GET",
+    "path": "/api/session-history",
+    "line": 1316
+  },
+  {
+    "method": "GET",
+    "path": "/api/portfolio-stats",
+    "line": 1321
+  },
+  {
+    "method": "GET",
+    "path": "/api/server-info",
+    "line": 1326
+  },
+  {
+    "method": "POST",
+    "path": "/api/restart",
+    "line": 1356
+  },
+  {
+    "method": "GET",
+    "path": "/api/pages",
+    "line": 1367
+  },
+  {
+    "method": "POST",
+    "path": "/api/pages/current",
+    "line": 1372
+  },
+  {
+    "method": "GET",
+    "path": "/api/templates",
+    "line": 1385
+  },
+  {
+    "method": "GET",
+    "path": "/api/studio-state",
+    "line": 1396
+  },
+  {
+    "method": "POST",
+    "path": "/api/upload",
+    "line": 1445
+  },
+  {
+    "method": "PUT",
+    "path": "/api/upload/:filename",
+    "line": 1565
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/upload/:filename",
+    "line": 1580
+  },
+  {
+    "method": "GET",
+    "path": "/api/uploads",
+    "line": 1601
+  },
+  {
+    "method": "POST",
+    "path": "/api/remove-background",
+    "line": 1712
+  },
+  {
+    "method": "POST",
+    "path": "/api/cdn-inject",
+    "line": 1800
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/cdn-inject",
+    "line": 1847
+  },
+  {
+    "method": "GET",
+    "path": "/api/cdn-injections",
+    "line": 1880
+  },
+  {
+    "method": "POST",
+    "path": "/api/inject-fam-asset",
+    "line": 1889
+  },
+  {
+    "method": "GET",
+    "path": "/api/character-branding",
+    "line": 1926
+  },
+  {
+    "method": "POST",
+    "path": "/api/character-branding",
+    "line": 1937
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/character-branding",
+    "line": 1968
+  },
+  {
+    "method": "GET",
+    "path": "/api/versions",
+    "line": 1989
+  },
+  {
+    "method": "GET",
+    "path": "/api/versions/:page/:timestamp",
+    "line": 1995
+  },
+  {
+    "method": "POST",
+    "path": "/api/rollback",
+    "line": 2010
+  },
+  {
+    "method": "PUT",
+    "path": "/api/brief",
+    "line": 2021
+  },
+  {
+    "method": "PUT",
+    "path": "/api/decisions",
+    "line": 2046
+  },
+  {
+    "method": "GET",
+    "path": "/api/sessions",
+    "line": 2103
+  },
+  {
+    "method": "POST",
+    "path": "/api/sessions/load",
+    "line": 2131
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk-generate-placeholders",
+    "line": 2592
+  },
+  {
+    "method": "POST",
+    "path": "/api/sync-content-fields",
+    "line": 2600
+  },
+  {
+    "method": "POST",
+    "path": "/api/sync-nav",
+    "line": 2613
+  },
+  {
+    "method": "POST",
+    "path": "/api/sync-footer",
+    "line": 2624
+  },
+  {
+    "method": "POST",
+    "path": "/api/replace-placeholder",
+    "line": 2636
+  },
+  {
+    "method": "POST",
+    "path": "/api/replace-slot",
+    "line": 2665
+  },
+  {
+    "method": "POST",
+    "path": "/api/clear-slot-mapping",
+    "line": 2717
+  },
+  {
+    "method": "GET",
+    "path": "/api/brand-health",
+    "line": 2735
+  },
+  {
+    "method": "GET",
+    "path": "/slot-preview/:page",
+    "line": 2994
+  },
+  {
+    "method": "GET",
+    "path": "/api/projects",
+    "line": 4974
+  },
+  {
+    "method": "POST",
+    "path": "/api/sites",
+    "line": 5014
+  },
+  {
+    "method": "GET",
+    "path": "/api/sites",
+    "line": 5033
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/projects/:tag",
+    "line": 5055
+  },
+  {
+    "method": "POST",
+    "path": "/api/switch-site",
+    "line": 5073
+  },
+  {
+    "method": "POST",
+    "path": "/api/new-site",
+    "line": 5115
+  },
+  {
+    "method": "POST",
+    "path": "/api/interview/start",
+    "line": 5175
+  },
+  {
+    "method": "POST",
+    "path": "/api/interview/answer",
+    "line": 5223
+  },
+  {
+    "method": "GET",
+    "path": "/api/interview/status",
+    "line": 5283
+  },
+  {
+    "method": "GET",
+    "path": "/api/interview/health",
+    "line": 5305
+  },
+  {
+    "method": "PUT",
+    "path": "/api/media-specs",
+    "line": 5333
+  },
+  {
+    "method": "POST",
+    "path": "/api/rescan",
+    "line": 5387
+  },
+  {
+    "method": "POST",
+    "path": "/api/generate-image-prompt",
+    "line": 5404
+  },
+  {
+    "method": "GET",
+    "path": "/api/stock-search",
+    "line": 5529
+  },
+  {
+    "method": "POST",
+    "path": "/api/stock-photo",
+    "line": 5562
+  },
+  {
+    "method": "POST",
+    "path": "/api/stock-apply",
+    "line": 5652
+  },
+  {
+    "method": "POST",
+    "path": "/api/share",
+    "line": 5732
+  },
+  {
+    "method": "GET",
+    "path": "/api/summaries",
+    "line": 5892
+  },
+  {
+    "method": "POST",
+    "path": "/api/summarize",
+    "line": 5897
+  },
+  {
+    "method": "GET",
+    "path": "/api/blueprint",
+    "line": 6194
+  },
+  {
+    "method": "POST",
+    "path": "/api/blueprint",
+    "line": 6199
+  },
+  {
+    "method": "POST",
+    "path": "/api/build/cancel",
+    "line": 6219
+  },
+  {
+    "method": "GET",
+    "path": "/api/build-metrics",
+    "line": 6249
+  },
+  {
+    "method": "GET",
+    "path": "/api/components",
+    "line": 6351
+  },
+  {
+    "method": "GET",
+    "path": "/api/components/:id",
+    "line": 6361
+  },
+  {
+    "method": "POST",
+    "path": "/api/components/import",
+    "line": 6419
+  },
+  {
+    "method": "POST",
+    "path": "/api/components/export",
+    "line": 6466
+  },
+  {
+    "method": "GET",
+    "path": "/api/content-fields/:page",
+    "line": 6617
+  },
+  {
+    "method": "POST",
+    "path": "/api/content-field",
+    "line": 6626
+  },
+  {
+    "method": "GET",
+    "path": "/api/brain-status",
+    "line": 6712
+  },
+  {
+    "method": "GET",
+    "path": "/api/capability-manifest",
+    "line": 6724
+  },
+  {
+    "method": "GET",
+    "path": "/api/studio-capabilities",
+    "line": 6733
+  },
+  {
+    "method": "POST",
+    "path": "/api/shay-shay/new-conversation",
+    "line": 6795
+  },
+  {
+    "method": "GET",
+    "path": "/api/shay-shay/session-init",
+    "line": 6810
+  },
+  {
+    "method": "POST",
+    "path": "/api/shay-shay",
+    "line": 6842
+  },
+  {
+    "method": "POST",
+    "path": "/api/shay-shay/gap",
+    "line": 7396
+  },
+  {
+    "method": "POST",
+    "path": "/api/shay-shay/outcome",
+    "line": 7411
+  },
+  {
+    "method": "POST",
+    "path": "/api/studio-patches/applied",
+    "line": 8513
+  },
+  {
+    "method": "POST",
+    "path": "/api/autonomous-build",
+    "line": 10214
+  },
+  {
+    "method": "GET",
+    "path": "/api/build-status/:tag",
+    "line": 10230
+  },
+  {
+    "method": "GET",
+    "path": "/api/research",
+    "line": 10260
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/verticals",
+    "line": 10293
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/sources",
+    "line": 10312
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/effectiveness",
+    "line": 10325
+  },
+  {
+    "method": "POST",
+    "path": "/api/research/query",
+    "line": 10334
+  },
+  {
+    "method": "POST",
+    "path": "/api/research/rate",
+    "line": 10347
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/feed",
+    "line": 10357
+  },
+  {
+    "method": "POST",
+    "path": "/api/research/manual-ingest",
+    "line": 10368
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/seed-status",
+    "line": 10444
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/threshold-analysis",
+    "line": 10473
+  },
+  {
+    "method": "GET",
+    "path": "/api/worker-queue",
+    "line": 10531
+  },
+  {
+    "method": "GET",
+    "path": "/api/memory",
+    "line": 10574
+  },
+  {
+    "method": "POST",
+    "path": "/api/memory",
+    "line": 10590
+  },
+  {
+    "method": "GET",
+    "path": "/api/jobs",
+    "line": 10606
+  },
+  {
+    "method": "POST",
+    "path": "/api/jobs/approve/:id",
+    "line": 10617
+  },
+  {
+    "method": "POST",
+    "path": "/api/jobs/park/:id",
+    "line": 10627
+  },
+  {
+    "method": "GET",
+    "path": "/api/research/:filename",
+    "line": 10637
+  },
+  {
+    "method": "GET",
+    "path": "/api/image-suggestions",
+    "line": 10666
+  },
+  {
+    "method": "POST",
+    "path": "/api/research/trigger",
+    "line": 10692
+  },
+  {
+    "method": "POST",
+    "path": "/api/research/to-brief",
+    "line": 10766
+  },
+  {
+    "method": "GET",
+    "path": "/api/context",
+    "line": 11279
+  },
+  {
+    "method": "POST",
+    "path": "/api/context/refresh",
+    "line": 11290
+  },
+  {
+    "method": "GET",
+    "path": "/api/brain",
+    "line": 11301
+  },
+  {
+    "method": "POST",
+    "path": "/api/brain",
+    "line": 11305
+  },
+  {
+    "method": "GET",
+    "path": "/api/intel/report",
+    "line": 11315
+  },
+  {
+    "method": "GET",
+    "path": "/api/intel/findings",
+    "line": 11326
+  },
+  {
+    "method": "POST",
+    "path": "/api/intel/promote",
+    "line": 11351
+  },
+  {
+    "method": "POST",
+    "path": "/api/intel/dismiss",
+    "line": 11384
+  },
+  {
+    "method": "POST",
+    "path": "/api/intel/backlog",
+    "line": 11402
+  },
+  {
+    "method": "POST",
+    "path": "/api/intel/run-research",
+    "line": 11429
+  },
+  {
+    "method": "POST",
+    "path": "/api/codex/exec",
+    "line": 11530
+  },
+  {
+    "method": "GET",
+    "path": "/api/mutations",
+    "line": 11558
+  },
+  {
+    "method": "GET",
+    "path": "/api/metrics/summary",
+    "line": 11591
+  },
+  {
+    "method": "POST",
+    "path": "/api/compare/generate",
+    "line": 11621
+  },
+  {
+    "method": "GET",
+    "path": "/api/agent/stats",
+    "line": 11710
+  },
+  {
+    "method": "GET",
+    "path": "/api/agent/routing",
+    "line": 11764
+  },
+  {
+    "method": "GET",
+    "path": "/api/cost/session",
+    "line": 11785
+  },
+  {
+    "method": "GET",
+    "path": "/api/telemetry/sdk-cost-summary",
+    "line": 11790
+  },
+  {
+    "method": "GET",
+    "path": "/api/trace",
+    "line": 11798
+  },
+  {
+    "method": "GET",
+    "path": "/api/trace/run/:runId",
+    "line": 11804
+  },
+  {
+    "method": "GET",
+    "path": "/api/workflow/stage-catalog",
+    "line": 11810
+  },
+  {
+    "method": "GET",
+    "path": "/api/agent/performance",
+    "line": 11821
+  },
+  {
+    "method": "GET",
+    "path": "/api/agent/scorecard",
+    "line": 11827
+  },
+  {
+    "method": "GET",
+    "path": "/api/fulfillment",
+    "line": 11834
+  },
+  {
+    "method": "POST",
+    "path": "/api/compare/generate-v2",
+    "line": 11842
+  },
+  {
+    "method": "POST",
+    "path": "/api/compare/adopt",
+    "line": 11933
+  },
+  {
+    "method": "POST",
+    "path": "/api/media/log",
+    "line": 11967
+  },
+  {
+    "method": "GET",
+    "path": "/api/video/jobs",
+    "line": 12280
+  },
+  {
+    "method": "POST",
+    "path": "/api/character/create-anchor",
+    "line": 12702
+  },
+  {
+    "method": "POST",
+    "path": "/api/character/generate-poses",
+    "line": 12715
+  },
+  {
+    "method": "POST",
+    "path": "/api/video/generate",
+    "line": 12728
+  },
+  {
+    "method": "POST",
+    "path": "/api/video/promo",
+    "line": 12742
+  },
+  {
+    "method": "GET",
+    "path": "/api/video/promo/:tag/download",
+    "line": 12755
+  },
+  {
+    "method": "POST",
+    "path": "/api/media/generate-asset",
+    "line": 12769
+  },
+  {
+    "method": "POST",
+    "path": "/api/media/generate-image",
+    "line": 12782
+  },
+  {
+    "method": "POST",
+    "path": "/api/media/generate-video",
+    "line": 12835
+  },
+  {
+    "method": "GET",
+    "path": "/api/media/usage",
+    "line": 12866
+  },
+  {
+    "method": "GET",
+    "path": "/api/media/usage/:provider",
+    "line": 12879
+  },
+  {
+    "method": "GET",
+    "path": "/api/validation-plan",
+    "line": 12888
+  },
+  {
+    "method": "POST",
+    "path": "/api/validation-plan/step/:id",
+    "line": 12903
+  },
+  {
+    "method": "POST",
+    "path": "/api/validation-plan/report",
+    "line": 12930
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/patch-spec",
+    "line": 12989
+  },
+  {
+    "method": "POST",
+    "path": "/api/approve-site",
+    "line": 13002
+  },
+  {
+    "method": "GET",
+    "path": "/api/revenue-card",
+    "line": 13016
+  },
+  {
+    "method": "GET",
+    "path": "/api/verify",
+    "line": 13033
+  },
+  {
+    "method": "POST",
+    "path": "/api/verify",
+    "line": 13038
+  },
+  {
+    "method": "POST",
+    "path": "/api/visual-verify",
+    "line": 13050
+  },
+  {
+    "method": "GET",
+    "path": "/api/settings",
+    "line": 13067
+  },
+  {
+    "method": "PUT",
+    "path": "/api/settings",
+    "line": 13103
+  },
+  {
+    "method": "GET",
+    "path": "/api/shay-shay/developer-mode/audit",
+    "line": 13125
+  },
+  {
+    "method": "POST",
+    "path": "/api/terminal/create",
+    "line": 20525
+  },
+  {
+    "method": "POST",
+    "path": "/api/terminal/:termId/inject",
+    "line": 20560
+  },
+  {
+    "method": "POST",
+    "path": "/api/terminal/:termId/resize",
+    "line": 20569
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/terminal/:termId",
+    "line": 20577
+  }
+]

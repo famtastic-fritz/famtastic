@@ -1,0 +1,12 @@
+{
+  "/api/build-status": {
+    "line": 10127,
+    "snippet": ", readSpec, tag: TAG });\n  console.log('[vnext] runtime-vnext operator path active \u2014 POST /api/vnext-build');\n}\n\n// GET /api/build-status/:tag \u2014 polling endpoint for build completion\napp.get('/api/build-status/:tag', (req, res) => {\n  const tagParam = req.params.tag;\n  if (!tagParam || !/^[a-z0-9][a-z0-9-]*$/.test(tagParam)) {\n    return res.status(400).json({ error: 'invalid tag' });\n  }\n  const specPath = path.join(SITES_ROOT, tagParam, 'spec.json');\n  if (!fs.existsSync(specPath)) return res.status(404).json({ error: 'site not found' });\n  try {\n    const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // L7781\n    normalizeTierAndMode(spec); // in-memory only \u2014 status endpoint, no write-back\n    const distDir = path.join(SITES_ROOT, tagParam, 'dist');\n    const htmlFiles = fs.existsSync(distDir)\n      ? fs.readdirSync(distDir).filter(f => f.endsWith('.html') && !f.startsWith('_'))\n      : [];\n    "
+  },
+  "/api/proof-report": null,
+  "/api/gap-log": null,
+  "/api/verify": {
+    "line": 12904,
+    "snippet": " || null,\n    deployed_url: spec.deployed_url || null,\n    custom_domain: spec.custom_domain || null,\n  });\n});\n\n// GET /api/verify\napp.get('/api/verify', (req, res) => {\n  const spec = readSpec();\n  res.json(spec.last_verification || null);\n});\n\napp.post('/api/verify', (req, res) => {\n  const pages = listPages();\n  if (pages.length === 0) return res.json({ status: 'failed', checks: [], issues: ['No pages found'], timestamp: new Date().toISOString() });\n  const result = runBuildVerification(pages);\n  try {\n    const spec = readSpec();\n    spec.last_verification = result;\n    writeSpec(spec);\n  } catch {}\n  res.json(result);\n});\n\napp.post('/api/visual-verify', (req, res) => {\n  const pages = listPages();\n  res.json({\n    ready: true,\n    pages,\n    previewUrl: 'http://localhost:3333',\n    agents: [\n      'famtastic-visual-layout',\n      'famtastic-console-health',\n      'famtastic-mobile-responsive',\n      '"
+  }
+}

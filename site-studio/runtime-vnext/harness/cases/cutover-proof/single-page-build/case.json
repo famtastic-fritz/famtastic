@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "name": "single-page-build",
+    "description": "vNext deterministic replay of single-page-build",
+    "siteTag": "cutover-proof-single",
+    "hubRoot": "/Users/famtasticfritz/famtastic/site-studio",
+    "startedAt": "2026-07-23T00:07:51.881Z",
+    "endedAt": "2026-07-23T00:07:51.885Z"
+  },
+  "pre": {
+    "timestamp": "2026-07-23T00:07:51.881Z",
+    "spec": {
+      "tag": "site-m11-vnext",
+      "site_name": "Demo Single Page",
+      "business_type": "service",
+      "design_brief": {
+        "business_name": "Demo Single Page",
+        "goal": "A clean landing page for a local service business.",
+        "must_have_sections": [
+          "hero",
+          "about",
+          "services",
+          "contact"
+        ],
+        "tone": [
+          "friendly",
+          "professional"
+        ]
+      },
+      "pages": [
+        "index.html"
+      ],
+      "media_specs": []
+    },
+    "studio": null,
+    "distSnapshot": {},
+    "mutations": [],
+    "traces": []
+  },
+  "post": {
+    "timestamp": "2026-07-23T00:07:51.885Z",
+    "spec": {
+      "tag": "site-m11-vnext",
+      "site_name": "Demo Single Page",
+      "business_type": "service",
+      "design_brief": {
+        "business_name": "Demo Single Page",
+        "goal": "A clean landing page for a local service business.",
+        "must_have_sections": [
+          "hero",
+          "about",
+          "services",
+          "contact"
+        ],
+        "tone": [
+          "friendly",
+          "professional"
+        ]
+      },
+      "pages": [
+        "index.html"
+      ],
+      "media_specs": []
+    },
+    "studio": null,
+    "distSnapshot": {
+      "index.html": {
+        "size": 217,
+        "mtime": "2026-07-23T00:07:51.886Z",
+        "sha256": "2b417cd2c0704399836d5a54ef125d226a54f65af262b20878f21c08457f89bf",
+        "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Demo Single Page</title>\n</head>\n<body>\n  <h1>Welcome to Demo Single Page</h1>\n  <p>This page was built deterministically.</p>\n</body>\n</html>\n"
+      }
+    },
+    "mutations": [],
+    "traces": []
+  },
+  "wsEvents": [
+    {
+      "type": "run:running",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      }
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      },
+      "stageId": "copy-template",
+      "stageAttemptId": "stage_1784765271883_85d0",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      },
+      "stageId": "copy-template",
+      "stageAttemptId": "stage_1784765271883_85d0"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      },
+      "stageId": "apply-branding",
+      "stageAttemptId": "stage_1784765271884_8ea1",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      },
+      "stageId": "apply-branding",
+      "stageAttemptId": "stage_1784765271884_8ea1"
+    },
+    {
+      "type": "stage:running",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      },
+      "stageId": "verify-output",
+      "stageAttemptId": "stage_1784765271885_8dd7",
+      "attempt": 1
+    },
+    {
+      "type": "stage:succeeded",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      },
+      "stageId": "verify-output",
+      "stageAttemptId": "stage_1784765271885_8dd7"
+    },
+    {
+      "type": "run:committed",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      }
+    },
+    {
+      "type": "run:published",
+      "runContext": {
+        "run_id": "run_1784765271881_17dc",
+        "project_id": "project_1784765271879_cab7",
+        "recipe_id": "deterministic-site-build-v1",
+        "recipe_version": "1.0.0",
+        "status": "published",
+        "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+        "started_at": "2026-07-23T00:07:51.881Z",
+        "trigger": "test",
+        "parent_run_id": null,
+        "ended_at": "2026-07-23T00:07:51.885Z"
+      }
+    }
+  ],
+  "actionResult": {
+    "status": "published",
+    "runContext": {
+      "run_id": "run_1784765271881_17dc",
+      "project_id": "project_1784765271879_cab7",
+      "recipe_id": "deterministic-site-build-v1",
+      "recipe_version": "1.0.0",
+      "status": "published",
+      "workspace_root": "/Users/famtasticfritz/famtastic/site-studio/sites/cutover-proof-single/runs/run_1784765271881_17dc",
+      "started_at": "2026-07-23T00:07:51.881Z",
+      "trigger": "test",
+      "parent_run_id": null,
+      "ended_at": "2026-07-23T00:07:51.885Z"
+    },
+    "stageOutputs": {
+      "copy-template": {
+        "outputs": {
+          "html": {
+            "result": {
+              "source": "/Users/famtasticfritz/famtastic/site-studio/runtime-vnext/recipes/fixtures/template.html",
+              "destination": "index.html"
+            },
+            "sideEffects": [
+              {
+                "path": "index.html",
+                "kind": "copy"
+              }
+            ],
+            "artifactReferences": [
+              "artifact_1784765271884_cca6"
+            ],
+            "durationMs": 0,
+            "costUsd": 0
+          }
+        }
+      },
+      "apply-branding": {
+        "outputs": {
+          "html": {
+            "result": {
+              "path": "index.html",
+              "replacementsApplied": 1
+            },
+            "sideEffects": [
+              {
+                "path": "index.html",
+                "kind": "transform"
+              }
+            ],
+            "artifactReferences": [
+              "artifact_1784765271885_f61a"
+            ],
+            "durationMs": 1,
+            "costUsd": 0
+          }
+        }
+      },
+      "generate-pages": {
+        "outputs": {
+          "html": []
+        }
+      },
+      "apply-page-branding": {
+        "outputs": {
+          "html": []
+        }
+      },
+      "verify-output": {
+        "outputs": {
+          "verification-report": {
+            "result": {
+              "path": "index.html",
+              "exists": true
+            },
+            "sideEffects": [],
+            "artifactReferences": [],
+            "durationMs": 0,
+            "costUsd": 0
+          }
+        }
+      }
+    }
+  }
+}

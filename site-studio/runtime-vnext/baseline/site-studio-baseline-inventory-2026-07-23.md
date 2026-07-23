@@ -1,0 +1,241 @@
+# Site Studio baseline inventory
+
+## Baseline metrics
+- server.js lines: 20966
+- public/index.html lines: 2406
+- total routes in server.js: 163
+- api routes: 162
+- non-api routes: 1
+- route methods: {'GET': 75, 'POST': 76, 'PUT': 6, 'DELETE': 5, 'PATCH': 1}
+
+## Route inventory
+- L1098: GET /api/logs/tail
+- L1106: GET /api/deploy-info
+- L1155: POST /api/deploy
+- L1205: POST /api/create-site-repo
+- L1214: PUT /api/site-repo
+- L1232: GET /api/spec
+- L1242: GET /api/site-info
+- L1248: GET /api/history
+- L1258: GET /api/assets
+- L1275: GET /api/config
+- L1282: GET /api/health
+- L1290: POST /api/proof-generate
+- L1305: POST /api/proof-campaign
+- L1316: GET /api/session-history
+- L1321: GET /api/portfolio-stats
+- L1326: GET /api/server-info
+- L1356: POST /api/restart
+- L1367: GET /api/pages
+- L1372: POST /api/pages/current
+- L1385: GET /api/templates
+- L1396: GET /api/studio-state
+- L1445: POST /api/upload
+- L1565: PUT /api/upload/:filename
+- L1580: DELETE /api/upload/:filename
+- L1601: GET /api/uploads
+- L1712: POST /api/remove-background
+- L1800: POST /api/cdn-inject
+- L1847: DELETE /api/cdn-inject
+- L1880: GET /api/cdn-injections
+- L1889: POST /api/inject-fam-asset
+- L1926: GET /api/character-branding
+- L1937: POST /api/character-branding
+- L1968: DELETE /api/character-branding
+- L1989: GET /api/versions
+- L1995: GET /api/versions/:page/:timestamp
+- L2010: POST /api/rollback
+- L2021: PUT /api/brief
+- L2046: PUT /api/decisions
+- L2103: GET /api/sessions
+- L2131: POST /api/sessions/load
+- L2592: POST /api/bulk-generate-placeholders
+- L2600: POST /api/sync-content-fields
+- L2613: POST /api/sync-nav
+- L2624: POST /api/sync-footer
+- L2636: POST /api/replace-placeholder
+- L2665: POST /api/replace-slot
+- L2717: POST /api/clear-slot-mapping
+- L2735: GET /api/brand-health
+- L2994: GET /slot-preview/:page
+- L4974: GET /api/projects
+- L5014: POST /api/sites
+- L5033: GET /api/sites
+- L5055: DELETE /api/projects/:tag
+- L5073: POST /api/switch-site
+- L5115: POST /api/new-site
+- L5175: POST /api/interview/start
+- L5223: POST /api/interview/answer
+- L5283: GET /api/interview/status
+- L5305: GET /api/interview/health
+- L5333: PUT /api/media-specs
+- L5387: POST /api/rescan
+- L5404: POST /api/generate-image-prompt
+- L5529: GET /api/stock-search
+- L5562: POST /api/stock-photo
+- L5652: POST /api/stock-apply
+- L5732: POST /api/share
+- L5892: GET /api/summaries
+- L5897: POST /api/summarize
+- L6194: GET /api/blueprint
+- L6199: POST /api/blueprint
+- L6219: POST /api/build/cancel
+- L6249: GET /api/build-metrics
+- L6351: GET /api/components
+- L6361: GET /api/components/:id
+- L6419: POST /api/components/import
+- L6466: POST /api/components/export
+- L6617: GET /api/content-fields/:page
+- L6626: POST /api/content-field
+- L6712: GET /api/brain-status
+- L6724: GET /api/capability-manifest
+- L6733: GET /api/studio-capabilities
+- L6795: POST /api/shay-shay/new-conversation
+- L6810: GET /api/shay-shay/session-init
+- L6842: POST /api/shay-shay
+- L7396: POST /api/shay-shay/gap
+- L7411: POST /api/shay-shay/outcome
+- L8513: POST /api/studio-patches/applied
+- L10214: POST /api/autonomous-build
+- L10230: GET /api/build-status/:tag
+- L10260: GET /api/research
+- L10293: GET /api/research/verticals
+- L10312: GET /api/research/sources
+- L10325: GET /api/research/effectiveness
+- L10334: POST /api/research/query
+- L10347: POST /api/research/rate
+- L10357: GET /api/research/feed
+- L10368: POST /api/research/manual-ingest
+- L10444: GET /api/research/seed-status
+- L10473: GET /api/research/threshold-analysis
+- L10531: GET /api/worker-queue
+- L10574: GET /api/memory
+- L10590: POST /api/memory
+- L10606: GET /api/jobs
+- L10617: POST /api/jobs/approve/:id
+- L10627: POST /api/jobs/park/:id
+- L10637: GET /api/research/:filename
+- L10666: GET /api/image-suggestions
+- L10692: POST /api/research/trigger
+- L10766: POST /api/research/to-brief
+- L11279: GET /api/context
+- L11290: POST /api/context/refresh
+- L11301: GET /api/brain
+- L11305: POST /api/brain
+- L11315: GET /api/intel/report
+- L11326: GET /api/intel/findings
+- L11351: POST /api/intel/promote
+- L11384: POST /api/intel/dismiss
+- L11402: POST /api/intel/backlog
+- L11429: POST /api/intel/run-research
+- L11530: POST /api/codex/exec
+- L11558: GET /api/mutations
+- L11591: GET /api/metrics/summary
+- L11621: POST /api/compare/generate
+- L11710: GET /api/agent/stats
+- L11764: GET /api/agent/routing
+- L11785: GET /api/cost/session
+- L11790: GET /api/telemetry/sdk-cost-summary
+- L11798: GET /api/trace
+- L11804: GET /api/trace/run/:runId
+- L11810: GET /api/workflow/stage-catalog
+- L11821: GET /api/agent/performance
+- L11827: GET /api/agent/scorecard
+- L11834: GET /api/fulfillment
+- L11842: POST /api/compare/generate-v2
+- L11933: POST /api/compare/adopt
+- L11967: POST /api/media/log
+- L12280: GET /api/video/jobs
+- L12702: POST /api/character/create-anchor
+- L12715: POST /api/character/generate-poses
+- L12728: POST /api/video/generate
+- L12742: POST /api/video/promo
+- L12755: GET /api/video/promo/:tag/download
+- L12769: POST /api/media/generate-asset
+- L12782: POST /api/media/generate-image
+- L12835: POST /api/media/generate-video
+- L12866: GET /api/media/usage
+- L12879: GET /api/media/usage/:provider
+- L12888: GET /api/validation-plan
+- L12903: POST /api/validation-plan/step/:id
+- L12930: POST /api/validation-plan/report
+- L12989: PATCH /api/patch-spec
+- L13002: POST /api/approve-site
+- L13016: GET /api/revenue-card
+- L13033: GET /api/verify
+- L13038: POST /api/verify
+- L13050: POST /api/visual-verify
+- L13067: GET /api/settings
+- L13103: PUT /api/settings
+- L13125: GET /api/shay-shay/developer-mode/audit
+- L20525: POST /api/terminal/create
+- L20560: POST /api/terminal/:termId/inject
+- L20569: POST /api/terminal/:termId/resize
+- L20577: DELETE /api/terminal/:termId
+
+## Frontend responsibility hints from inline script
+- websocket: 40 sampled hits
+  - inline-js L331: /WebSocket/
+  - inline-js L339: /WebSocket/
+  - inline-js L351: /WebSocket/
+  - inline-js L361: /WebSocket/
+  - inline-js L383: /WebSocket/
+  - inline-js L905: /WebSocket/
+  - inline-js L1275: /WebSocket/
+  - inline-js L1368: /WebSocket/
+  - inline-js L1370: /WebSocket/
+  - inline-js L1668: /WebSocket/
+  - inline-js L1755: /WebSocket/
+  - inline-js L145: /\bws\b/
+- rebuild: 8 sampled hits
+  - inline-js L818: /rebuild/
+  - inline-js L819: /rebuild/
+  - inline-js L820: /rebuild/
+  - inline-js L822: /rebuild/
+  - inline-js L823: /rebuild/
+  - inline-js L830: /rebuild/
+  - inline-js L841: /rebuild/
+  - inline-js L845: /rebuild/
+- verification: 35 sampled hits
+  - inline-js L849: /verify/
+  - inline-js L850: /verify/
+  - inline-js L852: /verify/
+  - inline-js L860: /verify/
+  - inline-js L861: /verify/
+  - inline-js L874: /verify/
+  - inline-js L874: /verify/
+  - inline-js L1021: /verify/
+  - inline-js L1021: /verify/
+  - inline-js L1024: /verify/
+  - inline-js L1025: /verify/
+  - inline-js L1028: /verify/
+- editor: 40 sampled hits
+  - inline-js L35: /page/
+  - inline-js L152: /page/
+  - inline-js L163: /page/
+  - inline-js L401: /page/
+  - inline-js L402: /page/
+  - inline-js L402: /page/
+  - inline-js L402: /page/
+  - inline-js L404: /page/
+  - inline-js L405: /page/
+  - inline-js L411: /page/
+  - inline-js L415: /page/
+  - inline-js L415: /page/
+- panel_refresh: 40 sampled hits
+  - inline-js L195: /render/
+  - inline-js L198: /render/
+  - inline-js L201: /render/
+  - inline-js L423: /render/
+  - inline-js L454: /render/
+  - inline-js L479: /render/
+  - inline-js L535: /render/
+  - inline-js L539: /render/
+  - inline-js L581: /render/
+  - inline-js L1028: /render/
+  - inline-js L1032: /render/
+  - inline-js L1216: /render/
+
+## Notes
+- This is a mechanical baseline inventory, not the final module design.
+- Responsibility hits are heuristic markers used to guide decomposition seams.

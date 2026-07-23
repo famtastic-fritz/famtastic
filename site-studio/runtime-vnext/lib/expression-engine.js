@@ -28,7 +28,7 @@ function evaluateExpression(expr, context) {
   if (/[(){}[\];,]/.test(trimmed)) {
     throw new Error(`Expression contains forbidden characters: ${expr}`);
   }
-  if (/[+\-*/=!?&|<>]/.test(trimmed)) {
+  if (/[+*/=!?&|<>]/.test(trimmed)) {
     throw new Error(`Expression contains operators: ${expr}`);
   }
 

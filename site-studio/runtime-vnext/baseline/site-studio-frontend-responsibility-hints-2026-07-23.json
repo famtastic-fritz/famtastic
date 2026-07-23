@@ -1,0 +1,664 @@
+{
+  "websocket": [
+    {
+      "pattern": "WebSocket",
+      "line": 331
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 339
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 351
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 361
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 383
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 905
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 1275
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 1368
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 1370
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 1668
+    },
+    {
+      "pattern": "WebSocket",
+      "line": 1755
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 145
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 148
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 182
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 331
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 331
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 332
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 339
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 339
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 339
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 351
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 351
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 352
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 361
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 361
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 361
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 383
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 383
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 384
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 465
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 465
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 489
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 489
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 905
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 905
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 905
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 1240
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 1275
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 1275
+    },
+    {
+      "pattern": "\\bws\\b",
+      "line": 1278
+    }
+  ],
+  "rebuild": [
+    {
+      "pattern": "rebuild",
+      "line": 818
+    },
+    {
+      "pattern": "rebuild",
+      "line": 819
+    },
+    {
+      "pattern": "rebuild",
+      "line": 820
+    },
+    {
+      "pattern": "rebuild",
+      "line": 822
+    },
+    {
+      "pattern": "rebuild",
+      "line": 823
+    },
+    {
+      "pattern": "rebuild",
+      "line": 830
+    },
+    {
+      "pattern": "rebuild",
+      "line": 841
+    },
+    {
+      "pattern": "rebuild",
+      "line": 845
+    }
+  ],
+  "verification": [
+    {
+      "pattern": "verify",
+      "line": 849
+    },
+    {
+      "pattern": "verify",
+      "line": 850
+    },
+    {
+      "pattern": "verify",
+      "line": 852
+    },
+    {
+      "pattern": "verify",
+      "line": 860
+    },
+    {
+      "pattern": "verify",
+      "line": 861
+    },
+    {
+      "pattern": "verify",
+      "line": 874
+    },
+    {
+      "pattern": "verify",
+      "line": 874
+    },
+    {
+      "pattern": "verify",
+      "line": 1021
+    },
+    {
+      "pattern": "verify",
+      "line": 1021
+    },
+    {
+      "pattern": "verify",
+      "line": 1024
+    },
+    {
+      "pattern": "verify",
+      "line": 1025
+    },
+    {
+      "pattern": "verify",
+      "line": 1028
+    },
+    {
+      "pattern": "verify",
+      "line": 1032
+    },
+    {
+      "pattern": "verify",
+      "line": 1043
+    },
+    {
+      "pattern": "verify",
+      "line": 1043
+    },
+    {
+      "pattern": "verify",
+      "line": 1043
+    },
+    {
+      "pattern": "verify",
+      "line": 1101
+    },
+    {
+      "pattern": "verify",
+      "line": 1104
+    },
+    {
+      "pattern": "verify",
+      "line": 1105
+    },
+    {
+      "pattern": "verify",
+      "line": 1109
+    },
+    {
+      "pattern": "verify",
+      "line": 1216
+    },
+    {
+      "pattern": "verify",
+      "line": 1216
+    },
+    {
+      "pattern": "verify",
+      "line": 1518
+    },
+    {
+      "pattern": "proof",
+      "line": 831
+    },
+    {
+      "pattern": "proof",
+      "line": 831
+    },
+    {
+      "pattern": "proof",
+      "line": 831
+    },
+    {
+      "pattern": "proof",
+      "line": 832
+    },
+    {
+      "pattern": "proof",
+      "line": 832
+    },
+    {
+      "pattern": "proof",
+      "line": 832
+    },
+    {
+      "pattern": "proof",
+      "line": 833
+    },
+    {
+      "pattern": "proof",
+      "line": 833
+    },
+    {
+      "pattern": "proof",
+      "line": 833
+    },
+    {
+      "pattern": "proof",
+      "line": 834
+    },
+    {
+      "pattern": "proof",
+      "line": 834
+    },
+    {
+      "pattern": "proof",
+      "line": 834
+    }
+  ],
+  "editor": [
+    {
+      "pattern": "page",
+      "line": 35
+    },
+    {
+      "pattern": "page",
+      "line": 152
+    },
+    {
+      "pattern": "page",
+      "line": 163
+    },
+    {
+      "pattern": "page",
+      "line": 401
+    },
+    {
+      "pattern": "page",
+      "line": 402
+    },
+    {
+      "pattern": "page",
+      "line": 402
+    },
+    {
+      "pattern": "page",
+      "line": 402
+    },
+    {
+      "pattern": "page",
+      "line": 404
+    },
+    {
+      "pattern": "page",
+      "line": 405
+    },
+    {
+      "pattern": "page",
+      "line": 411
+    },
+    {
+      "pattern": "page",
+      "line": 415
+    },
+    {
+      "pattern": "page",
+      "line": 415
+    },
+    {
+      "pattern": "page",
+      "line": 419
+    },
+    {
+      "pattern": "page",
+      "line": 420
+    },
+    {
+      "pattern": "page",
+      "line": 420
+    },
+    {
+      "pattern": "page",
+      "line": 421
+    },
+    {
+      "pattern": "page",
+      "line": 421
+    },
+    {
+      "pattern": "page",
+      "line": 422
+    },
+    {
+      "pattern": "page",
+      "line": 422
+    },
+    {
+      "pattern": "page",
+      "line": 422
+    },
+    {
+      "pattern": "page",
+      "line": 423
+    },
+    {
+      "pattern": "page",
+      "line": 424
+    },
+    {
+      "pattern": "page",
+      "line": 424
+    },
+    {
+      "pattern": "page",
+      "line": 424
+    },
+    {
+      "pattern": "page",
+      "line": 424
+    },
+    {
+      "pattern": "page",
+      "line": 426
+    },
+    {
+      "pattern": "page",
+      "line": 426
+    },
+    {
+      "pattern": "page",
+      "line": 426
+    },
+    {
+      "pattern": "page",
+      "line": 454
+    },
+    {
+      "pattern": "page",
+      "line": 455
+    },
+    {
+      "pattern": "page",
+      "line": 458
+    },
+    {
+      "pattern": "page",
+      "line": 458
+    },
+    {
+      "pattern": "page",
+      "line": 460
+    },
+    {
+      "pattern": "page",
+      "line": 460
+    },
+    {
+      "pattern": "page",
+      "line": 462
+    },
+    {
+      "pattern": "page",
+      "line": 463
+    },
+    {
+      "pattern": "page",
+      "line": 465
+    },
+    {
+      "pattern": "page",
+      "line": 465
+    },
+    {
+      "pattern": "page",
+      "line": 467
+    },
+    {
+      "pattern": "page",
+      "line": 467
+    }
+  ],
+  "panel_refresh": [
+    {
+      "pattern": "render",
+      "line": 195
+    },
+    {
+      "pattern": "render",
+      "line": 198
+    },
+    {
+      "pattern": "render",
+      "line": 201
+    },
+    {
+      "pattern": "render",
+      "line": 423
+    },
+    {
+      "pattern": "render",
+      "line": 454
+    },
+    {
+      "pattern": "render",
+      "line": 479
+    },
+    {
+      "pattern": "render",
+      "line": 535
+    },
+    {
+      "pattern": "render",
+      "line": 539
+    },
+    {
+      "pattern": "render",
+      "line": 581
+    },
+    {
+      "pattern": "render",
+      "line": 1028
+    },
+    {
+      "pattern": "render",
+      "line": 1032
+    },
+    {
+      "pattern": "render",
+      "line": 1216
+    },
+    {
+      "pattern": "render",
+      "line": 1290
+    },
+    {
+      "pattern": "render",
+      "line": 1293
+    },
+    {
+      "pattern": "render",
+      "line": 1459
+    },
+    {
+      "pattern": "refresh",
+      "line": 412
+    },
+    {
+      "pattern": "refresh",
+      "line": 792
+    },
+    {
+      "pattern": "refresh",
+      "line": 815
+    },
+    {
+      "pattern": "refresh",
+      "line": 835
+    },
+    {
+      "pattern": "refresh",
+      "line": 836
+    },
+    {
+      "pattern": "refresh",
+      "line": 837
+    },
+    {
+      "pattern": "refresh",
+      "line": 873
+    },
+    {
+      "pattern": "refresh",
+      "line": 908
+    },
+    {
+      "pattern": "refresh",
+      "line": 909
+    },
+    {
+      "pattern": "refresh",
+      "line": 912
+    },
+    {
+      "pattern": "refresh",
+      "line": 1016
+    },
+    {
+      "pattern": "refresh",
+      "line": 1099
+    },
+    {
+      "pattern": "refresh",
+      "line": 1100
+    },
+    {
+      "pattern": "refresh",
+      "line": 1101
+    },
+    {
+      "pattern": "refresh",
+      "line": 1102
+    },
+    {
+      "pattern": "refresh",
+      "line": 1103
+    },
+    {
+      "pattern": "refresh",
+      "line": 1104
+    },
+    {
+      "pattern": "refresh",
+      "line": 1106
+    },
+    {
+      "pattern": "refresh",
+      "line": 1108
+    },
+    {
+      "pattern": "refresh",
+      "line": 1109
+    },
+    {
+      "pattern": "refresh",
+      "line": 1112
+    },
+    {
+      "pattern": "refresh",
+      "line": 1213
+    },
+    {
+      "pattern": "refresh",
+      "line": 1214
+    },
+    {
+      "pattern": "refresh",
+      "line": 1215
+    },
+    {
+      "pattern": "refresh",
+      "line": 1216
+    }
+  ]
+}

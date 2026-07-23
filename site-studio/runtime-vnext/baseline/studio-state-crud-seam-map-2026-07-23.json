@@ -1,0 +1,103 @@
+{
+  "milestone": "M5",
+  "title": "Studio-state and CRUD seam map",
+  "generated_at": "2026-07-23",
+  "status": "discovery",
+  "scope": {
+    "goal": "Identify the next extraction boundary for studio-state, page selection, page CRUD-adjacent state, and component CRUD responsibilities still living in server.js.",
+    "source_file": "/Users/famtasticfritz/famtastic/site-studio/server.js"
+  },
+  "findings": {
+    "state_and_page_routes": [
+      {
+        "route": "GET /api/spec",
+        "line": 1024,
+        "responsibility": "returns raw spec via readSpec()"
+      },
+      {
+        "route": "GET /api/site-info",
+        "line": 1034,
+        "responsibility": "alias envelope { spec } for client code"
+      },
+      {
+        "route": "GET /api/pages",
+        "line": 1159,
+        "responsibility": "lists dist HTML pages and currentPage"
+      },
+      {
+        "route": "POST /api/pages/current",
+        "line": 1164,
+        "responsibility": "mutates currentPage and persists via saveStudio()"
+      },
+      {
+        "route": "GET /api/studio-state",
+        "line": 1188,
+        "responsibility": "aggregates spec, state.json, dist file inventory, approved decisions, and previewUrl"
+      }
+    ],
+    "state_helpers": [
+      {
+        "helper": "loadStudio()",
+        "line": 815,
+        "responsibility": "hydrates persisted studio session state and validates current_page against dist contents"
+      },
+      {
+        "helper": "saveStudio()",
+        "line": 843,
+        "responsibility": "persists current_page, build state, timestamps, and session metadata"
+      },
+      {
+        "helper": "listPages()",
+        "line": 932,
+        "responsibility": "enumerates HTML pages under DIST_DIR()"
+      }
+    ],
+    "component_crud_routes_still_inline": [
+      {
+        "route": "GET /api/components",
+        "line": 6143,
+        "responsibility": "read component library.json"
+      },
+      {
+        "route": "GET /api/components/:id",
+        "line": 6153,
+        "responsibility": "read component.json from HUB_ROOT/components/<id>"
+      },
+      {
+        "route": "POST /api/components/import",
+        "line": 6211,
+        "responsibility": "normalize payload, write component files, update library index, sync skill"
+      },
+      {
+        "route": "POST /api/components/export",
+        "line": 6258,
+        "responsibility": "extract section HTML/CSS variables/fields/slots from current site into a reusable component"
+      }
+    ],
+    "existing_module_overlap": {
+      "mount": "app.use('/api/components', require('./server/component-routes').createComponentRouter())",
+      "line": 975,
+      "module_file": "/Users/famtasticfritz/famtastic/site-studio/server/component-routes.js",
+      "module_surface": [
+        "GET /api/components/",
+        "GET /api/components/check",
+        "GET /api/components/contract",
+        "POST /api/components/insert",
+        "GET /api/components/insertions"
+      ],
+      "risk": "server.js still defines overlapping /api/components read/import/export handlers later in the file, creating route-order ambiguity and split ownership under the same prefix"
+    }
+  },
+  "recommended_extraction_order": [
+    "1. Extract page/state routes plus listPages/loadStudio/saveStudio-adjacent helpers into a dedicated studio-state-routes module.",
+    "2. Extract inline component CRUD/import/export handlers into a dedicated component-crud-routes or expand server/component-routes.js into the single owner of the /api/components prefix.",
+    "3. Remove duplicate inline /api/components handlers from server.js only after parity verification, because mount order currently gives the earlier module first claim on matching paths.",
+    "4. Add seam tests around GET /api/pages, POST /api/pages/current, GET /api/studio-state, GET /api/components/:id, POST /api/components/import, and POST /api/components/export."
+  ],
+  "open_seams": [
+    "currentPage is a module-level mutable singleton referenced far beyond the route area, so extraction must preserve shared authority until websocket and build-context lanes are cut later.",
+    "component prefix ownership is already split across server/component-routes.js and inline handlers in server.js.",
+    "GET /api/studio-state walks the dist tree directly and packages multiple concerns into one response."
+  ],
+  "proof_note": "Read-only discovery artifact only. No runtime state was mutated to generate this seam map."
+}

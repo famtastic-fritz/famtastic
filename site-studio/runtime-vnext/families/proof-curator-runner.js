@@ -32,6 +32,12 @@ class ProofCuratorRunner {
       ...(browserQa.issues || []),
     ];
 
+    const pagesBuilt = Array.isArray(assemblyManifest.pages_found)
+      ? assemblyManifest.pages_found.length
+      : Array.isArray(assemblyManifest.pages)
+        ? assemblyManifest.pages.length
+        : 0;
+
     const proof = {
       site_tag: b.site_tag || 'unknown',
       business_name: biz.name || '',
@@ -42,7 +48,7 @@ class ProofCuratorRunner {
       total_issues: allIssues.length,
       error_count: allIssues.filter(i => i.severity === 'error').length,
       warning_count: allIssues.filter(i => i.severity === 'warning').length,
-      pages_built: (assemblyManifest.pages_found || []).length,
+      pages_built: pagesBuilt,
       seo_pages: (seoPack.pages || []).length,
       screenshots: browserQa.screenshots || [],
       deferred_items: [],

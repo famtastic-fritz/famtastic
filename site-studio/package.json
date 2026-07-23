@@ -5,9 +5,9 @@
   "description": "Chat-driven website builder for the FAMtastic ecosystem",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "studio": "while true; do node server.js; echo '[studio] server exited — restarting in 1s...'; sleep 1; done",
+    "start": "FAMTASTIC_USE_RUNTIME_VNEXT=1 node server.js",
+    "dev": "FAMTASTIC_USE_RUNTIME_VNEXT=1 node server.js",
+    "studio": "while true; do FAMTASTIC_USE_RUNTIME_VNEXT=1 node server.js; echo '[studio] server exited — restarting in 1s...'; sleep 1; done",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -20,6 +20,7 @@
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "express": "^4.21.0",
+    "js-yaml": "^4.1.0",
     "multer": "^2.1.1",
     "node-pty": "^1.2.0-beta.12",
     "nodemailer": "^8.0.3",

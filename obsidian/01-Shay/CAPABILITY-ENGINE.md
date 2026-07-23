@@ -1,6 +1,6 @@
 ---
 title: Capability Engine
-date: 2026-06-08
+date: 2026-07-23
 status: active
 tags:
 - capability-engine
@@ -14,6 +14,8 @@ permalink: famtastic/01-shay/capability-engine
 # Capability Engine
 
 A living system that maps what every agent in the FAMtastic ecosystem can do, tracks what's missing, and plans how to dispatch work to the right lane. It grows with every dispatch — each task either confirms a capability or surfaces a new gap.
+
+2026-07-23 update: Site Studio now has a proof-backed callable modular baseline on the live localhost runtime. The capability shift is that Shay can route work against a named runtime-vnext contract and extracted seams instead of only treating Site Studio as one fragile monolith.
 
 ## Why It Exists
 
@@ -70,6 +72,9 @@ decompose → check → select → log gaps → build plan → dispatch
 - **Brain lanes** orchestrate, reason, verify, synthesize — expensive, high-context, slow (Claude, Codex, Gemini Pro)
 - **Worker lanes** code, search, transform, generate — cheap, fast, narrow (Qwen 1.5B, Phi-4-mini, free cloud agents)
 - Brain lanes never do worker work. Worker lanes never do brain work.
+- Subscription-backed lanes tied to Shay's own brain budget are protected by default; they are not the default labor pool.
+- If a subscription lane shares budget/caps with Shay's brain, worker routing must avoid it unless the packet explicitly justifies that spend.
+- Text-only lanes (for example `glm-5.2` in Fritz's current environment) can serve review/copy/reasoning packets that do not require tools, but must stay out of tool-heavy builder or agent-loop work.
 
 ### Routing Hierarchy
 1. **Free** (17 lanes) — zero cost, limited quality/speed
@@ -90,6 +95,13 @@ M5 16GB = max 2 large Ollama models simultaneously. The planner checks current l
   - Several free-cloud services not yet integrated
 - **$200+** in available sign-up credits identified across free-tier services
 - **Codex token leak** resolved — Fritz closed the app manually, cap resets June 10
+
+## Current State (2026-07-23 addendum)
+
+- **Site Studio callable modular baseline is live** — `site-studio/runtime-vnext/SITE-STUDIO-CALLABLE-CONTRACT-2026-07-23.md` and `SITE-STUDIO-RUN-TO-COMPLETION-BRIEF-2026-07-23.md` now freeze the external contract and milestone truth.
+- **Live proof-backed runtime available** — localhost Studio is serving on `http://127.0.0.1:3334/` with health checks returning 200 and runtime-vnext rebuild proof artifacts written to disk.
+- **Capability improvement** — Shay can now route build work toward a named callable Site Studio contract instead of treating the whole studio as one implicit `server.js` behavior blob.
+- **Honest limitation remains** — backend decomposition is partial. `site-studio/server.js` is still large, so the capability state is “callable modular baseline” rather than “fully decomposed site factory.”
 
 ## How It Grows
 
