@@ -9,9 +9,13 @@ fi
 # site-deploy — Deploy a site to hosting
 # Usage: scripts/site-deploy <tag> [--provider netlify|cloudflare] [--prod]
 #
-# Deploys the contents of sites/<tag>/dist/ to the configured provider.
+# Deploys the contents of sites/<tag>/<source-dir>/ to the configured provider.
 # Default provider: netlify (installed globally)
 # Alternate: cloudflare (via npx wrangler)
+#
+# Source dir: SITE_DEPLOY_SOURCE_DIR env var selects the artifact directory
+# (e.g. "dist-vnext" for the vNext/V1 build artifact). Default: "dist"
+# (legacy behavior preserved for direct CLI use).
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
@@ -41,7 +45,55 @@ if [ -n "$DEPLOY_ENV" ] && [ "$DEPLOY_ENV" != "staging" ] && [ "$DEPLOY_ENV" != 
 fi
 
 SITE_DIR="./sites/$TAG"
-DIST="$SITE_DIR/dist"
+# Sites root override: Site Studio's deploy runner passes SITE_DEPLOY_SITES_ROOT
+# so the script resolves sites/<tag> against the server's configured sites root
+# (tests boot against a fully temporary tree). Default "./sites" preserves the
+# legacy direct-CLI behavior byte-for-byte.
+SITES_ROOT_OVERRIDE="${SITE_DEPLOY_SITES_ROOT:-}"
+if [ -n "$SITES_ROOT_OVERRIDE" ]; then
+  SITE_DIR="$SITES_ROOT_OVERRIDE/$TAG"
+fi
+# Immutable deploy target (Site Studio V1 path): the runner captured the Netlify
+# site ID BEFORE dispatch and hands it over verbatim. On this path the script
+# uses EXACTLY that ID — spec.json and .netlify/state.json are never consulted
+# to pick the target, so a spec change after dispatch cannot redirect the deploy.
+IMMUTABLE_SITE_ID="${SITE_DEPLOY_SITE_ID:-}"
+if [ -n "$IMMUTABLE_SITE_ID" ]; then
+  # UUID-ish: Netlify ids are UUIDs; accept safe slug-shaped ids too, reject
+  # whitespace/slashes/traversal outright.
+  if ! printf '%s' "$IMMUTABLE_SITE_ID" | grep -qE '^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$'; then
+    echo "[deploy] Invalid SITE_DEPLOY_SITE_ID: '$IMMUTABLE_SITE_ID'" >&2
+    exit 1
+  fi
+elif [ "${SITE_DEPLOY_IMMUTABLE_TARGET:-}" = "1" ]; then
+  echo "[deploy] Immutable deploy requested (SITE_DEPLOY_IMMUTABLE_TARGET=1) but SITE_DEPLOY_SITE_ID is missing — refusing to deploy anywhere." >&2
+  exit 1
+fi
+# Immutable deploy provider (Site Studio V1 path): the runner captured the
+# provider BEFORE dispatch together with the site id. On this path the script
+# uses EXACTLY that provider — spec.deploy_provider, config defaults and CLI
+# autodetect below are never consulted, so the provider cannot drift after
+# dispatch. Missing/invalid/unsupported values fail closed.
+if [ "${SITE_DEPLOY_IMMUTABLE_TARGET:-}" = "1" ]; then
+  IMMUTABLE_PROVIDER="${SITE_DEPLOY_PROVIDER:-}"
+  if [ -z "$IMMUTABLE_PROVIDER" ]; then
+    echo "[deploy] Immutable deploy requested (SITE_DEPLOY_IMMUTABLE_TARGET=1) but SITE_DEPLOY_PROVIDER is missing — refusing to deploy anywhere." >&2
+    exit 1
+  fi
+  case "$IMMUTABLE_PROVIDER" in
+    netlify|cloudflare|vercel) ;;
+    *) echo "[deploy] Invalid SITE_DEPLOY_PROVIDER: '$IMMUTABLE_PROVIDER' (supported: netlify, cloudflare, vercel)" >&2; exit 1 ;;
+  esac
+  PROVIDER="$IMMUTABLE_PROVIDER"
+fi
+# Artifact source dir: env override (used by Site Studio to ship the vNext
+# build artifact), default "dist" preserves legacy CLI behavior. Guard against
+# path escape — the value becomes part of a filesystem path.
+SOURCE_DIR="${SITE_DEPLOY_SOURCE_DIR:-dist}"
+case "$SOURCE_DIR" in
+  *[/\\]*|*..*) echo "[deploy] Invalid SITE_DEPLOY_SOURCE_DIR: $SOURCE_DIR" >&2; exit 1 ;;
+esac
+DIST="$SITE_DIR/$SOURCE_DIR"
 SPEC="$SITE_DIR/spec.json"
 SRC="${XDG_DATA_HOME:-$HOME/.local/share}/famtastic/agent-hub/sources/site"
 DEPLOY_CONFIG="./config/site-deploy/defaults.yaml"
@@ -50,7 +102,7 @@ mkdir -p "$SRC"
 
 # Validate site exists
 if [ ! -d "$DIST" ] || [ ! -f "$DIST/index.html" ]; then
-  echo "[deploy] No site found at $DIST. Build first with: fam-hub site build $TAG"
+  echo "[deploy] No site found at $DIST. Build first with: fam-hub site build $TAG (source dir: $SOURCE_DIR)"
   exit 1
 fi
 
@@ -102,8 +154,11 @@ deploy_netlify() {
 
   # Check if site already linked (has a site ID)
   SITE_ID=""
+  if [ -n "$IMMUTABLE_SITE_ID" ]; then
+    # Immutable V1 target: exactly the captured ID, never re-read from spec.
+    SITE_ID="$IMMUTABLE_SITE_ID"
   # First: check spec.environments[env].site_id
-  if [ -n "$DEPLOY_ENV" ] && [ -f "$SPEC" ]; then
+  elif [ -n "$DEPLOY_ENV" ] && [ -f "$SPEC" ]; then
     SITE_ID=$(jq -r --arg env "$DEPLOY_ENV" '.environments[$env].site_id // empty' "$SPEC" 2>/dev/null || true)
   fi
   # Fallback: check .netlify/state.json (legacy, only if no --env)
@@ -116,6 +171,14 @@ deploy_netlify() {
   fi
 
   echo "[deploy] Uploading to Netlify..." >&2
+  if [ -n "$IMMUTABLE_SITE_ID" ]; then
+    # Fail loudly rather than deploy elsewhere: nothing on the immutable path
+    # may resolve a different target than the captured one.
+    if [ "$SITE_ID" != "$IMMUTABLE_SITE_ID" ]; then
+      echo "[deploy] Refusing: resolved site id '$SITE_ID' differs from immutable target '$IMMUTABLE_SITE_ID'" >&2
+      exit 1
+    fi
+  fi
   if [ -n "$SITE_ID" ]; then
     # Existing site — deploy to it (always use --site to bypass .netlify/state.json)
     echo "[deploy] Deploying to existing site: $SITE_ID" >&2
@@ -175,6 +238,11 @@ deploy_netlify() {
 
   echo "$DEPLOY_OUTPUT" >&2
 
+  if [ -n "$IMMUTABLE_SITE_ID" ]; then
+    # Unambiguous marker on stderr: the ACTUAL id passed to `netlify deploy --site`.
+    echo "[deploy] site-id-used: $SITE_ID" >&2
+  fi
+
   # Extract URL from output — only the URL goes to stdout
   DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9._-]+\.netlify\.app[^ ]*' | head -1 || true)
   if [ -z "$DEPLOY_URL" ]; then
@@ -229,6 +297,11 @@ case "$PROVIDER" in
     exit 1
     ;;
 esac
+if [ "${SITE_DEPLOY_IMMUTABLE_TARGET:-}" = "1" ]; then
+  # Unambiguous marker on stderr, next to site-id-used: the ACTUAL provider the
+  # immutable deploy ran with (verbatim from SITE_DEPLOY_PROVIDER).
+  echo "[deploy] provider-used: $PROVIDER" >&2
+fi
 
 # --- Update spec with deploy info ---
 if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
@@ -236,9 +309,11 @@ if [ -n "$DEPLOY_URL" ] && [ -f "$SPEC" ]; then
   TMP=$(mktemp)
   if [ -n "$DEPLOY_ENV" ]; then
     # Write to environments[env] structure
-    # Resolve site ID: spec.environments[env] → new-site temp file → .netlify/state.json
+    # Resolve site ID: immutable target (V1 path, never re-read) → spec.environments[env] → new-site temp file → .netlify/state.json
     NEW_SITE_ID=""
-    if [ -f "$SPEC" ]; then
+    if [ -n "$IMMUTABLE_SITE_ID" ]; then
+      NEW_SITE_ID="$IMMUTABLE_SITE_ID"
+    elif [ -f "$SPEC" ]; then
       NEW_SITE_ID=$(jq -r --arg env "$DEPLOY_ENV" '.environments[$env].site_id // empty' "$SPEC" 2>/dev/null || true)
     fi
     if [ -z "$NEW_SITE_ID" ] && [ -f "$SITE_DIR/.netlify-new-site-id" ]; then

@@ -24,6 +24,11 @@ const { createLedger, addFulfillmentItem, finalizeLedger, readLedger, FULFILLMEN
 const suggestionLogger = require('./lib/suggestion-logger');
 const brandTracker = require('./lib/brand-tracker');
 const { buildCapabilityManifest, loadManifest, checkNetlify } = require('./lib/capability-manifest');
+// Operator V1 — durable deployment jobs + the deploy subprocess runner
+// (ported from feature/site-studio-runtime-vnext-closeout; see those modules
+// for the immutable-target contract).
+const { createDeployRunner } = require('./lib/deploy-runner');
+const { reconcileInterruptedDeployments } = require('./lib/deploy-jobs');
 const costMonitor = require('./lib/cost-monitor');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
@@ -1308,12 +1313,19 @@ registerDeployRepoRoutes({
   getSpecFile: () => SPEC_FILE(),
   getHubRepoCache: () => _hubRepoCache,
   getTag: () => TAG,
-  isDeployInProgress: () => deployInProgress,
-  readSpec,
-  writeSpec,
+  isDeployInProgress,
+  // Tag-scoped pair: the V1 deploy route reads/writes the EXPLICIT site's
+  // spec; zero-tag calls (deploy-info, site-repo) keep the ambient behavior.
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
   checkNetlify,
   runDeploy,
   createSiteRepo,
+  // Operator V1 deploy contract: explicit-tag artifact check, provider
+  // resolution, and the sites root the status scan walks.
+  getDistVnextDir: DIST_VNEXT_DIR,
+  loadSettings,
+  getSitesRoot: () => SITES_ROOT,
 });
 
 registerStudioStateRoutes({
@@ -18457,7 +18469,11 @@ wss.on('connection', (ws) => {
           const deployEnv = (lowerDeploy.includes('prod') || lowerDeploy.includes('production') || lowerDeploy.includes('live'))
             ? 'production' : 'staging';
           ws.send(JSON.stringify({ type: 'status', content: `Deploying to ${deployEnv}...` }));
-          runDeploy(ws, deployEnv);
+          // Legacy WS chat deploy: ambient site, captured once here, ships the
+          // V1 artifact (dist-vnext). No deploymentId — the durable job record
+          // is an HTTP-path contract; completion still writes the legacy
+          // spec.environments/deployed_url/deploy_history fields.
+          runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist-vnext' });
           break;
         }
 
@@ -18998,157 +19014,48 @@ function runOrchestratorSite(ws, template) {
 
 // --- Run site-deploy ---
 // env: 'staging' | 'production'
-let deployInProgress = false;
-// Parse deploy stderr for known failure patterns and return a user-facing message.
-function parseDeployStderr(stderr) {
-  if (!stderr) return null;
-  const s = stderr.toLowerCase();
-  if (/not\s+(?:logged\s+in|authorized|authenticated)|login\s+required|netlify\s+login/.test(s))
-    return 'Netlify is not logged in. Run "netlify login" in a terminal.';
-  if (/network|enotfound|econnrefused|etimedout|getaddrinfo/.test(s))
-    return 'Network error reaching Netlify. Check your connection and retry.';
-  if (/site\s+id|site_id|no\s+site\s+specified/.test(s))
-    return 'Netlify site ID is missing or invalid. Set NETLIFY_SITE_ID or run "netlify link".';
-  if (/permission\s+denied|EACCES/i.test(stderr))
-    return 'Permission denied running the deploy script. Check file permissions on scripts/site-deploy.';
-  if (/quota|rate\s+limit/.test(s))
-    return 'Netlify rate limit or quota exceeded. Try again later.';
-  return null;
-}
+// Deploy runner — extracted to lib/deploy-runner.js so completion persistence
+// is testable without booting the server (ported from
+// feature/site-studio-runtime-vnext-closeout). The in-progress guard keys on
+// site+env; site authority, provider and the Netlify site id are captured by
+// the dispatcher and passed in as ctx — completion never re-reads the ambient
+// TAG. The tag-scoped readSpecForTag/writeSpecForTag pair satisfies the
+// runner's readSpec(siteTag)/writeSpec(spec, { siteTag, source }) contract;
+// zero-tag calls keep the legacy ambient behavior.
+const _deployRunner = createDeployRunner({
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  invalidateSpecCache,
+  checkNetlify,
+  spawn,
+  hubRoot: HUB_ROOT,
+  sitesRoot: SITES_ROOT,
+  // listPages is ambient on main; scope it to the explicit tag when given so
+  // the deploy_history page count belongs to the deployed site.
+  listPages: (siteTag) => (siteTag ? listPagesInDir(path.join(siteDirFor(siteTag), 'dist')) : listPages()),
+  loadSettings,
+  // The legacy appendConvo is ambient (global TAG paths). For an explicit
+  // non-ambient site, append to THAT site's conversation log instead.
+  appendConvo: (entry, siteTag) => {
+    if (!siteTag || siteTag === TAG) return appendConvo(entry);
+    try {
+      const dir = siteDirFor(siteTag);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.appendFileSync(path.join(dir, 'conversation.jsonl'), JSON.stringify({ ...entry, tag: siteTag }) + '\n');
+    } catch {}
+  },
+  studioEvents,
+  STUDIO_EVENTS,
+  syncSiteRepo,
+  getTag: () => TAG,
+});
 
-async function runDeploy(ws, env) {
-  if (deployInProgress) {
-    try { ws.send(JSON.stringify({ type: 'status', content: 'Deploy already in progress.' })); } catch {}
-    return;
-  }
-  env = env || 'staging';
-  const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
-  console.log(`[deploy] starting env=${env} tag=${TAG}`);
-
-  // Layer 2 — Preflight BEFORE setting deployInProgress flag.
-  // If the preflight fails, the flag stays false and the user can retry.
-  let netlify;
-  try {
-    netlify = await checkNetlify();
-  } catch (probeErr) {
-    netlify = { ok: false, reason: 'other', details: probeErr.message };
-  }
-  if (!netlify || !netlify.ok) {
-    const detail = (netlify && netlify.details) || 'Netlify is not configured.';
-    console.log(`[deploy] preflight failed reason=${(netlify && netlify.reason) || 'other'} details=${detail}`);
-    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed: ${detail}` })); } catch {}
-    appendConvo({ role: 'assistant', content: `${envLabel} deploy preflight failed: ${detail}`, at: new Date().toISOString() });
-    return;
-  }
-
-  deployInProgress = true;
-  const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];
-  let child;
-  try {
-    child = spawn(args[0], args.slice(1), {
-      env: process.env,
-      cwd: HUB_ROOT,
-    });
-  } catch (spawnErr) {
-    // Synchronous spawn failure (rare — usually surfaces via 'error' event)
-    deployInProgress = false;
-    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed to start: ${spawnErr.message}` })); } catch {}
-    return;
-  }
-
-  let output = '';
-  let stderrBuf = '';
-  let settled = false;
-  const settle = () => {
-    if (settled) return false;
-    settled = true;
-    deployInProgress = false;
-    return true;
-  };
-
-  child.stdout.on('data', (chunk) => {
-    output += chunk.toString();
-    try { ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() })); } catch {}
-  });
-
-  child.stderr.on('data', (chunk) => {
-    const text = chunk.toString();
-    stderrBuf += text;
-    const trimmed = text.trim();
-    console.error('[deploy]', trimmed);
-    if (trimmed) try { ws.send(JSON.stringify({ type: 'status', content: trimmed })); } catch {}
-  });
-
-  // Layer 3 — Spawn error handler (executable not found, permission denied, etc.)
-  child.on('error', (err) => {
-    if (!settle()) return;
-    const msg = err && err.code === 'ENOENT'
-      ? `${envLabel} deploy failed: deploy script not found at scripts/site-deploy.`
-      : `${envLabel} deploy failed to launch: ${err.message}`;
-    try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
-    appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
-  });
-
-  // Layer 4 — Exit code handling with stderr pattern parsing
-  child.on('close', (code) => {
-    if (!settle()) return;
-    const urlMatch = output.match(/https:\/\/[^\s]+/);
-    if (code === 0 && urlMatch) {
-      invalidateSpecCache();
-      const spec = readSpec();
-      if (!spec.environments) spec.environments = {};
-      spec.environments[env] = {
-        ...(spec.environments[env] || {}),
-        provider: spec.deploy_provider || loadSettings().deploy_target || 'netlify',
-        site_id: spec.environments?.[env]?.site_id || spec.netlify_site_id || null,
-        url: urlMatch[0],
-        deployed_at: new Date().toISOString(),
-        state: 'deployed',
-      };
-      spec.deployed_url = urlMatch[0];
-      spec.deployed_at = spec.environments[env].deployed_at;
-      spec.state = 'deployed';
-
-      spec.deploy_history = spec.deploy_history || [];
-      spec.deploy_history.push({
-        version: spec.deploy_history.length + 1,
-        deployed_at: spec.environments[env].deployed_at,
-        environment: env,
-        url: urlMatch[0],
-        fam_score: spec.fam_score || null,
-        lighthouse: spec.lighthouse_score || null,
-        pages: (listPages() || []).length,
-      });
-      writeSpec(spec);
-
-      studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
-      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` })); } catch {}
-      try { ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] })); } catch {}
-      appendConvo({ role: 'assistant', content: `${envLabel} deploy succeeded: ${urlMatch[0]}`, at: new Date().toISOString() });
-    } else if (code === 0) {
-      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` })); } catch {}
-      appendConvo({ role: 'assistant', content: `${envLabel} deploy completed (no URL captured)`, at: new Date().toISOString() });
-    } else {
-      // Non-zero exit — parse stderr for a specific reason; fall back to generic message.
-      const specific = parseDeployStderr(stderrBuf);
-      const msg = specific
-        ? `${envLabel} deploy failed: ${specific}`
-        : `${envLabel} deploy failed with exit code ${code}. Check the output above for details.`;
-      try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
-      appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
-    }
-
-    // Auto-sync site repo after successful deploy
-    if (code === 0) {
-      const freshSpec = readSpec();
-      if (freshSpec.site_repo?.path) {
-        const targetBranch = env === 'production' ? 'main' : 'staging';
-        try { ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` })); } catch {}
-        syncSiteRepo(ws, freshSpec, targetBranch);
-      }
-    }
-  });
-}
+// Function declarations (hoisted) — the route registration far above this
+// point in the file references runDeploy/isDeployInProgress before the const
+// runner exists, the same way it relied on the old hoisted runDeploy
+// declaration.
+function runDeploy(ws, env, ctx) { return _deployRunner.runDeploy(ws, env, ctx); }
+function isDeployInProgress(siteTag, env) { return _deployRunner.isDeployInProgress(siteTag, env); }
 
 // --- Git Push — push to site repo (dev branch) ---
 function runGitPush(ws, { silent = false } = {}) {
@@ -20478,6 +20385,18 @@ if (require.main === module) {
     }
     throw err;
   });
+
+  // Deployment boot reconciliation: records left dispatched/running by a dead
+  // process would otherwise look eternally running. Mark them interrupted
+  // before the port opens so GET /api/deploy-status never reports a corpse.
+  try {
+    const reconciled = reconcileInterruptedDeployments({ sitesRoot: SITES_ROOT, readSpec: readSpecForTag, writeSpec: writeSpecForTag });
+    if (reconciled.reconciled > 0) {
+      console.log(`[deploy] boot reconcile — marked ${reconciled.reconciled} interrupted deployment(s) failed across ${reconciled.sites.length} site(s)`);
+    }
+  } catch (err) {
+    console.error(`[deploy] boot reconcile FAILED: ${err.message}`);
+  }
 
   server.listen(PORT, () => {
     // Operator V1 — ensure the root credential exists before the port opens,

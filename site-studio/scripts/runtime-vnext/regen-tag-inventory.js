@@ -39,6 +39,32 @@ const REPORT = path.join(ROOT, 'runtime-vnext', 'reports', 'tag-call-sites.json'
  * { classification, site_tag_source }
  */
 const NEW_SITES = {
+  "runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist-vnext' });": {
+    classification: 'authority-read',
+    site_tag_source:
+      'Chat-path deploy: the operator\'s selected site is captured ONCE into ctx at dispatch; the deploy-runner ' +
+      'completion path reads only ctx.siteTag, never the ambient TAG again.',
+  },
+  "// TAG. The tag-scoped readSpecForTag/writeSpecForTag pair satisfies the": {
+    classification: 'unrelated',
+    site_tag_source: 'Comment naming the contract; no authority read.',
+  },
+  "// The legacy appendConvo is ambient (global TAG paths). For an explicit": {
+    classification: 'unrelated',
+    site_tag_source: 'Comment naming the contract; no authority read.',
+  },
+  "if (!siteTag || siteTag === TAG) return appendConvo(entry);": {
+    classification: 'authority-read',
+    site_tag_source:
+      'Comparison only: decides whether the explicit deploy site IS the operator\'s ambient site, in which case the ' +
+      'legacy ambient appendConvo is reused. Non-ambient sites append to their own conversation log by explicit tag.',
+  },
+  "getTag: () => TAG,": {
+    classification: 'authority-read',
+    site_tag_source:
+      'Ambient fallback for the legacy no-ctx deploy-runner path (WS chat deploy without an explicit ctx). The HTTP ' +
+      'route always passes ctx.siteTag, so this fallback is never consulted there.',
+  },
 };
 
 const BOOTSTRAP_NOTES = {

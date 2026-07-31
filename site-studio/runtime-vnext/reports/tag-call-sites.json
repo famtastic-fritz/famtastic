@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-31T17:02:42.175Z",
+  "generated_at": "2026-07-31T17:19:29.258Z",
   "task": "runtime-vnext Phase 1, Task 1.1 — TAG authority inventory",
   "file": "server.js",
-  "file_lines": 20555,
+  "file_lines": 20474,
   "method": "Every occurrence of the literal substring 'TAG' in server.js, classified. Substring-only matches (SITE_TAG, GENERIC_TAG_BLOCKLIST) and prose/comment matches are retained and marked 'unrelated' so the enumeration is provably exhaustive against a plain `grep -o TAG`.",
   "classification_rules": {
     "authority-read": "TAG decides which site is operated on: filesystem joins, spawned-process argv, DB/JSONL record attribution, API response payload fields naming the subject site, cache keys, connection binding, and behaviour branches. These are the sites that must take an explicit siteTag.",
@@ -11,12 +11,12 @@
     "unrelated": "Comments/JSDoc, a different identifier containing the substring TAG, or a property key literally named TAG."
   },
   "totals": {
-    "occurrences": 154,
-    "word_boundary_TAG": 149,
-    "authority-read": 126,
-    "ui-preference": 6,
+    "occurrences": 156,
+    "word_boundary_TAG": 151,
+    "authority-read": 127,
+    "ui-preference": 5,
     "assignment": 5,
-    "unrelated": 17
+    "unrelated": 19
   },
   "hardest_to_migrate": [
     {
@@ -38,7 +38,7 @@
   ],
   "call_sites": [
     {
-      "line": 72,
+      "line": 77,
       "occurrence": 1,
       "column": 5,
       "source": "let TAG = process.env.SITE_TAG || readLastSite() || 'site-demo';",
@@ -46,7 +46,7 @@
       "site_tag_source": "A write to the global TAG binding. Migration: return the new siteTag to the caller instead of mutating the shared global."
     },
     {
-      "line": 72,
+      "line": 77,
       "occurrence": 2,
       "column": 28,
       "source": "let TAG = process.env.SITE_TAG || readLastSite() || 'site-demo';",
@@ -54,7 +54,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 93,
+      "line": 98,
       "occurrence": 1,
       "column": 52,
       "source": "function SITE_DIR() { return path.join(SITES_ROOT, TAG); }",
@@ -62,7 +62,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 177,
+      "line": 182,
       "occurrence": 1,
       "column": 17,
       "source": "getTag: () => TAG,",
@@ -70,7 +70,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 199,
+      "line": 204,
       "occurrence": 1,
       "column": 4,
       "source": "// TAG and HUB_ROOT are defined above; getSiteDir returns the mutable current SITE_DIR()",
@@ -78,7 +78,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 204,
+      "line": 209,
       "occurrence": 1,
       "column": 21,
       "source": "getTag:     () => TAG,",
@@ -86,7 +86,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 883,
+      "line": 888,
       "occurrence": 1,
       "column": 12,
       "source": "tag: TAG,",
@@ -94,7 +94,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 934,
+      "line": 939,
       "occurrence": 1,
       "column": 12,
       "source": "tag: TAG,",
@@ -102,7 +102,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 958,
+      "line": 963,
       "occurrence": 1,
       "column": 59,
       "source": "try { db.createSession({ id: currentSessionId, siteTag: TAG, model: loadSettings().model || 'unknown' }); } catch {}",
@@ -110,7 +110,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 959,
+      "line": 964,
       "occurrence": 1,
       "column": 59,
       "source": "studioEvents.emit(STUDIO_EVENTS.SESSION_STARTED, { tag: TAG });",
@@ -118,7 +118,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 1255,
+      "line": 1260,
       "occurrence": 1,
       "column": 17,
       "source": "getTag: () => TAG,",
@@ -126,7 +126,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 1310,
+      "line": 1315,
       "occurrence": 1,
       "column": 17,
       "source": "getTag: () => TAG,",
@@ -134,7 +134,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 1324,
+      "line": 1336,
       "occurrence": 1,
       "column": 17,
       "source": "getTag: () => TAG,",
@@ -142,7 +142,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 1362,
+      "line": 1374,
       "occurrence": 1,
       "column": 19,
       "source": "res.json({ tag: TAG, previewPort: PREVIEW_PORT, studioPort: PORT, sitesRoot: SITES_ROOT });",
@@ -150,7 +150,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 1403,
+      "line": 1415,
       "occurrence": 1,
       "column": 39,
       "source": "try { res.json(db.getSessionHistory(TAG)); }",
@@ -158,7 +158,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 1420,
+      "line": 1432,
       "occurrence": 1,
       "column": 10,
       "source": "tag: TAG,",
@@ -166,7 +166,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5037,
+      "line": 5049,
       "occurrence": 1,
       "column": 27,
       "source": "is_current: d === TAG,",
@@ -174,7 +174,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5040,
+      "line": 5052,
       "occurrence": 1,
       "column": 67,
       "source": "return { tag: d, name: d, state: 'error', is_current: d === TAG };",
@@ -182,7 +182,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5081,
+      "line": 5093,
       "occurrence": 1,
       "column": 139,
       "source": "return { tag: d, site_name: displayName, state: spec.state || 'unknown', deployed_url: spec.deployed_url || null, is_current: d === TAG };",
@@ -190,7 +190,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5083,
+      "line": 5095,
       "occurrence": 1,
       "column": 72,
       "source": "return { tag: d, site_name: d, state: 'error', is_current: d === TAG };",
@@ -198,7 +198,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5091,
+      "line": 5103,
       "occurrence": 1,
       "column": 23,
       "source": "if (!tag || tag === TAG) {",
@@ -206,7 +206,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5092,
+      "line": 5104,
       "occurrence": 1,
       "column": 50,
       "source": "return res.status(400).json({ error: tag === TAG ? 'Cannot delete the active site — switch to another first' : 'tag required' });",
@@ -214,7 +214,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5119,
+      "line": 5131,
       "occurrence": 1,
       "column": 3,
       "source": "TAG = newTag;",
@@ -222,7 +222,7 @@
       "site_tag_source": "A write to the global TAG binding. Migration: return the new siteTag to the caller instead of mutating the shared global."
     },
     {
-      "line": 5120,
+      "line": 5132,
       "occurrence": 1,
       "column": 17,
       "source": "writeLastSite(TAG);",
@@ -230,7 +230,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5132,
+      "line": 5144,
       "occurrence": 1,
       "column": 57,
       "source": "studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });",
@@ -238,7 +238,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5139,
+      "line": 5151,
       "occurrence": 1,
       "column": 64,
       "source": "client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));",
@@ -246,7 +246,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5145,
+      "line": 5157,
       "occurrence": 1,
       "column": 45,
       "source": "console.log(`[studio] Switched to site: ${TAG}`);",
@@ -254,7 +254,7 @@
       "site_tag_source": "TAG only reaches the operator as display text. May keep reading the operator's selected site after migration; no server authority change required."
     },
     {
-      "line": 5146,
+      "line": 5158,
       "occurrence": 1,
       "column": 34,
       "source": "res.json({ success: true, tag: TAG, pages, currentPage });",
@@ -262,7 +262,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5152,
+      "line": 5164,
       "occurrence": 1,
       "column": 49,
       "source": "// directory creation, atomic spec write, and TAG switch + WS notification.",
@@ -270,7 +270,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 5299,
+      "line": 5311,
       "occurrence": 1,
       "column": 59,
       "source": "fs.appendFileSync(corrPath, JSON.stringify({ tag: TAG, corrections, at: new Date().toISOString() }) + '\\n');",
@@ -278,7 +278,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5301,
+      "line": 5313,
       "occurrence": 1,
       "column": 24,
       "source": "active_site: TAG, intent: 'brief_correction', source: 'interview', weight: 2.0",
@@ -286,7 +286,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5749,
+      "line": 5761,
       "occurrence": 1,
       "column": 13,
       "source": "site: TAG,",
@@ -294,7 +294,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5957,
+      "line": 5969,
       "occurrence": 1,
       "column": 13,
       "source": "siteId: TAG,",
@@ -302,7 +302,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 5958,
+      "line": 5970,
       "occurrence": 1,
       "column": 33,
       "source": "siteName: spec.site_name || TAG,",
@@ -310,7 +310,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6110,
+      "line": 6122,
       "occurrence": 1,
       "column": 17,
       "source": "site_tag: TAG,",
@@ -318,7 +318,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6500,
+      "line": 6512,
       "occurrence": 1,
       "column": 20,
       "source": "active_site: TAG,",
@@ -326,7 +326,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6691,
+      "line": 6703,
       "occurrence": 1,
       "column": 64,
       "source": "suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'character_pipeline', source: 'shay-shay-t0' });",
@@ -334,7 +334,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6706,
+      "line": 6718,
       "occurrence": 1,
       "column": 64,
       "source": "suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'autonomous_build', source: 'shay-shay-t0' });",
@@ -342,7 +342,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6719,
+      "line": 6731,
       "occurrence": 1,
       "column": 64,
       "source": "suggestionLogger.logSuggestion(message, { active_site: TAG, intent: 'build_request', source: 'shay-shay-t0' });",
@@ -350,7 +350,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6729,
+      "line": 6741,
       "occurrence": 1,
       "column": 64,
       "source": "suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });",
@@ -358,7 +358,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6737,
+      "line": 6749,
       "occurrence": 1,
       "column": 62,
       "source": "suggestionLogger.logSuggestion(message, { active_site: TAG, intent: tier0.intent, source: 'shay-shay-t0' });",
@@ -366,7 +366,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 6747,
+      "line": 6759,
       "occurrence": 1,
       "column": 22,
       "source": "active_site: TAG,",
@@ -374,7 +374,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7033,
+      "line": 7045,
       "occurrence": 1,
       "column": 20,
       "source": "active_site: TAG,",
@@ -382,7 +382,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7061,
+      "line": 7073,
       "occurrence": 1,
       "column": 68,
       "source": "extractAndStoreMemory(message, normalized.response, { siteTag: TAG, source: 'shay-shay' }).catch(() => {});",
@@ -390,7 +390,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7073,
+      "line": 7085,
       "occurrence": 1,
       "column": 7,
       "source": "TAG, message || 'unknown',",
@@ -398,7 +398,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7161,
+      "line": 7173,
       "occurrence": 1,
       "column": 48,
       "source": "const activeSiteTag = context.active_site || TAG || null;",
@@ -406,7 +406,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7215,
+      "line": 7227,
       "occurrence": 1,
       "column": 38,
       "source": "site_tag: context.active_site || TAG || null,",
@@ -414,7 +414,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7719,
+      "line": 7731,
       "occurrence": 1,
       "column": 35,
       "source": "tag: siteSnapshot.site_tag || TAG,",
@@ -422,7 +422,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 7725,
+      "line": 7737,
       "occurrence": 1,
       "column": 78,
       "source": "const memoryContext = memory.buildShayShayContext(siteSnapshot.site_tag || TAG);",
@@ -430,7 +430,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8649,
+      "line": 8661,
       "occurrence": 1,
       "column": 24,
       "source": "gapLogger.logGap(TAG, message, gapLogger.GAP_CATEGORIES.NOT_BUILT, {",
@@ -438,7 +438,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8709,
+      "line": 8721,
       "occurrence": 1,
       "column": 39,
       "source": "const siteTag = context.site_tag || TAG;",
@@ -446,7 +446,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8811,
+      "line": 8823,
       "occurrence": 1,
       "column": 22,
       "source": "*     endSession(), TAG change, cache invalidation, or site-switched WS",
@@ -454,7 +454,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 8814,
+      "line": 8826,
       "occurrence": 1,
       "column": 21,
       "source": "*     endSession → TAG switch → writeLastSite → cache invalidation →",
@@ -462,7 +462,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 8924,
+      "line": 8936,
       "occurrence": 1,
       "column": 5,
       "source": "TAG = newTag;",
@@ -470,7 +470,7 @@
       "site_tag_source": "A write to the global TAG binding. Migration: return the new siteTag to the caller instead of mutating the shared global."
     },
     {
-      "line": 8925,
+      "line": 8937,
       "occurrence": 1,
       "column": 19,
       "source": "writeLastSite(TAG);",
@@ -478,7 +478,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8932,
+      "line": 8944,
       "occurrence": 1,
       "column": 59,
       "source": "studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });",
@@ -486,7 +486,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8938,
+      "line": 8950,
       "occurrence": 1,
       "column": 66,
       "source": "client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));",
@@ -494,7 +494,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8943,
+      "line": 8955,
       "occurrence": 1,
       "column": 70,
       "source": "console.log(`[createSite] Updated existing same-business site: ${TAG}`);",
@@ -502,7 +502,7 @@
       "site_tag_source": "TAG only reaches the operator as display text. May keep reading the operator's selected site after migration; no server authority change required."
     },
     {
-      "line": 8982,
+      "line": 8994,
       "occurrence": 1,
       "column": 3,
       "source": "TAG = newTag;",
@@ -510,7 +510,7 @@
       "site_tag_source": "A write to the global TAG binding. Migration: return the new siteTag to the caller instead of mutating the shared global."
     },
     {
-      "line": 8983,
+      "line": 8995,
       "occurrence": 1,
       "column": 17,
       "source": "writeLastSite(TAG);",
@@ -518,7 +518,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8990,
+      "line": 9002,
       "occurrence": 1,
       "column": 57,
       "source": "studioEvents.emit(STUDIO_EVENTS.SITE_SWITCHED, { tag: TAG });",
@@ -526,7 +526,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 8996,
+      "line": 9008,
       "occurrence": 1,
       "column": 64,
       "source": "client.send(JSON.stringify({ type: 'site-switched', tag: TAG, pages, currentPage }));",
@@ -534,7 +534,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 9001,
+      "line": 9013,
       "occurrence": 1,
       "column": 65,
       "source": "console.log(`[createSite] Created and switched to new site: ${TAG}`);",
@@ -542,7 +542,7 @@
       "site_tag_source": "TAG only reaches the operator as display text. May keep reading the operator's selected site after migration; no server authority change required."
     },
     {
-      "line": 9086,
+      "line": 9098,
       "occurrence": 1,
       "column": 25,
       "source": "// Helper — read sites/<TAG>/brand.json if present, else null. Used as a recovery",
@@ -550,7 +550,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9103,
+      "line": 9115,
       "occurrence": 1,
       "column": 61,
       "source": "* @param {object} spec     Spec for the current site (post-TAG-switch).",
@@ -558,7 +558,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9136,
+      "line": 9148,
       "occurrence": 1,
       "column": 95,
       "source": "const buildMsg = `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}.`;",
@@ -566,7 +566,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 9241,
+      "line": 9253,
       "occurrence": 1,
       "column": 15,
       "source": "const GENERIC_TAG_BLOCKLIST = new Set([",
@@ -574,7 +574,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9253,
+      "line": 9265,
       "occurrence": 1,
       "column": 49,
       "source": "const onlyGeneric = tokens.every(t => GENERIC_TAG_BLOCKLIST.has(t) || IDENTITY_STRIP_WORDS.has(t));",
@@ -582,7 +582,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9316,
+      "line": 9328,
       "occurrence": 1,
       "column": 42,
       "source": "const tagOk = parsed.tag && !GENERIC_TAG_BLOCKLIST.has(tagSlug);",
@@ -590,7 +590,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9336,
+      "line": 9348,
       "occurrence": 1,
       "column": 18,
       "source": "if (!GENERIC_TAG_BLOCKLIST.has(tagSlug)) {",
@@ -598,7 +598,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9366,
+      "line": 9378,
       "occurrence": 1,
       "column": 19,
       "source": "const siteTag = TAG;",
@@ -606,7 +606,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 9549,
+      "line": 9561,
       "occurrence": 1,
       "column": 47,
       "source": "// Step 2: Create site via shared helper (TAG switch + WS notify owned by helper)",
@@ -614,7 +614,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9584,
+      "line": 9596,
       "occurrence": 1,
       "column": 66,
       "source": "// Step 2b: Synthesize design_brief on the active spec (post-TAG-switch)",
@@ -622,7 +622,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9855,
+      "line": 9867,
       "occurrence": 1,
       "column": 58,
       "source": "// 4. Synthesize design_brief on the active spec (post-TAG-switch)",
@@ -630,7 +630,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 9898,
+      "line": 9910,
       "occurrence": 1,
       "column": 71,
       "source": "registerRuntimeVnextRoutes({ app, getWss: () => wss, readSpec, tag: TAG });",
@@ -638,7 +638,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 9909,
+      "line": 9921,
       "occurrence": 1,
       "column": 17,
       "source": "getTag: () => TAG,",
@@ -646,7 +646,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10515,
+      "line": 10527,
       "occurrence": 1,
       "column": 42,
       "source": "// of only reporting on whichever site TAG currently points at.",
@@ -654,7 +654,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 10516,
+      "line": 10528,
       "occurrence": 1,
       "column": 30,
       "source": "const tag = tagOverride || TAG;",
@@ -662,7 +662,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10724,
+      "line": 10736,
       "occurrence": 1,
       "column": 32,
       "source": "const tag = tagOverride || TAG;",
@@ -670,7 +670,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10762,
+      "line": 10774,
       "occurrence": 1,
       "column": 32,
       "source": "lines.push(`Active site: ${TAG}`);",
@@ -678,7 +678,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10941,
+      "line": 10953,
       "occurrence": 1,
       "column": 64,
       "source": "return res.json({ exists: false, content: '', active_site: TAG, generated_at: null });",
@@ -686,7 +686,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10946,
+      "line": 10958,
       "occurrence": 1,
       "column": 50,
       "source": "res.json({ exists: true, content, active_site: TAG, generated_at });",
@@ -694,7 +694,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10951,
+      "line": 10963,
       "occurrence": 1,
       "column": 50,
       "source": "studioContextWriter.generate(eventType, { tag: TAG })",
@@ -702,7 +702,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 10987,
+      "line": 10999,
       "occurrence": 1,
       "column": 38,
       "source": "const siteTag = req.query.tag || TAG;",
@@ -710,7 +710,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11046,
+      "line": 11058,
       "occurrence": 1,
       "column": 19,
       "source": "const siteTag = TAG;",
@@ -718,7 +718,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11074,
+      "line": 11086,
       "occurrence": 1,
       "column": 15,
       "source": "site_tag: TAG,",
@@ -726,7 +726,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11252,
+      "line": 11264,
       "occurrence": 1,
       "column": 17,
       "source": "const tag = TAG;",
@@ -734,7 +734,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11298,
+      "line": 11310,
       "occurrence": 1,
       "column": 74,
       "source": "const prompt = `Generate a complete HTML page for \"${spec.site_name || TAG}\" — page: ${pageName}. Business type: ${spec.business_type || 'general'}. Brief: ${brief.goal || ''}. Tone: ${(brief.tone || []).join(', ')}. Output ONLY the full HTML — no explanation.`;",
@@ -742,7 +742,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11451,
+      "line": 11463,
       "occurrence": 1,
       "column": 31,
       "source": "const siteLog = readSiteLog(TAG, HUB_ROOT, 50);",
@@ -750,7 +750,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11459,
+      "line": 11471,
       "occurrence": 1,
       "column": 46,
       "source": "const events = queryTraceEvents({ siteTag: TAG, runId: runId || undefined, limit: parseInt(limit, 10) });",
@@ -758,7 +758,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11460,
+      "line": 11472,
       "occurrence": 1,
       "column": 24,
       "source": "res.json({ site_tag: TAG, run_id: runId || null, count: events.length, events });",
@@ -766,7 +766,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11465,
+      "line": 11477,
       "occurrence": 1,
       "column": 30,
       "source": "const events = getRunTrace(TAG, runId, HUB_ROOT);",
@@ -774,7 +774,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11466,
+      "line": 11478,
       "occurrence": 1,
       "column": 24,
       "source": "res.json({ site_tag: TAG, run_id: runId, count: events.length, events });",
@@ -782,7 +782,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11495,
+      "line": 11507,
       "occurrence": 1,
       "column": 29,
       "source": "const ledger = readLedger(TAG, HUB_ROOT, runId || null);",
@@ -790,7 +790,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11496,
+      "line": 11508,
       "occurrence": 1,
       "column": 44,
       "source": "if (!ledger) return res.json({ site_tag: TAG, ledger: null });",
@@ -798,7 +798,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11497,
+      "line": 11509,
       "occurrence": 1,
       "column": 24,
       "source": "res.json({ site_tag: TAG, ledger });",
@@ -806,7 +806,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11514,
+      "line": 11526,
       "occurrence": 1,
       "column": 74,
       "source": "const prompt = `Generate a complete HTML page for \"${spec.site_name || TAG}\" — page: ${pageName}. Business type: ${spec.business_type || 'general'}. Brief: ${brief.goal || ''}. Tone: ${(brief.tone || []).join(', ')}. IMPORTANT: Every section must have data-section-id. Every editable text must have data-field-id. Output ONLY the full HTML.`;",
@@ -814,7 +814,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 11629,
+      "line": 11641,
       "occurrence": 1,
       "column": 28,
       "source": "data.site = data.site || TAG;",
@@ -822,7 +822,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 12320,
+      "line": 12332,
       "occurrence": 1,
       "column": 39,
       "source": "const resolvedTag = site_tag || TAG;",
@@ -830,7 +830,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 12526,
+      "line": 12538,
       "occurrence": 1,
       "column": 46,
       "source": "plan.title = `Studio UI Validation — ${TAG}`;",
@@ -838,7 +838,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 13784,
+      "line": 13796,
       "occurrence": 1,
       "column": 27,
       "source": "Site: ${spec.site_name || TAG}, page: ${currentPage}, intent: ${intent}",
@@ -846,7 +846,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 13846,
+      "line": 13858,
       "occurrence": 1,
       "column": 32,
       "source": "siteTag: spec.tag || TAG,",
@@ -854,7 +854,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 13847,
+      "line": 13859,
       "occurrence": 1,
       "column": 61,
       "source": "siteName: spec.site_name || spec.business_name || TAG,",
@@ -862,7 +862,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 13893,
+      "line": 13905,
       "occurrence": 1,
       "column": 106,
       "source": "handleChatMessage(ws, `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}`, 'build', spec);",
@@ -870,7 +870,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 14007,
+      "line": 14019,
       "occurrence": 1,
       "column": 26,
       "source": "{ active_site: TAG, intent: 'brief_shown', source: 'handlePlanning', weight: 1.5 }",
@@ -878,7 +878,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 14068,
+      "line": 14080,
       "occurrence": 1,
       "column": 15,
       "source": "- Site tag: ${TAG}",
@@ -886,7 +886,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 14134,
+      "line": 14146,
       "occurrence": 1,
       "column": 19,
       "source": "site_tag: TAG,",
@@ -894,7 +894,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 14551,
+      "line": 14563,
       "occurrence": 1,
       "column": 17,
       "source": "tag: TAG, hubRoot: HUB_ROOT,",
@@ -902,7 +902,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 14568,
+      "line": 14580,
       "occurrence": 1,
       "column": 19,
       "source": "tag: TAG, hubRoot: HUB_ROOT,",
@@ -910,7 +910,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 14687,
+      "line": 14699,
       "occurrence": 1,
       "column": 14,
       "source": "tag: TAG, hubRoot: HUB_ROOT,",
@@ -918,7 +918,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 15431,
+      "line": 15443,
       "occurrence": 1,
       "column": 60,
       "source": "const isReunion = /reunion|family.event/.test(siteTag || TAG) || spec.business_type === 'family_reunion';",
@@ -926,7 +926,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16128,
+      "line": 16140,
       "occurrence": 1,
       "column": 59,
       "source": "studioEvents.emit(STUDIO_EVENTS.BUILD_COMPLETED, { tag: TAG, pages: writtenPages });",
@@ -934,7 +934,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16150,
+      "line": 16162,
       "occurrence": 1,
       "column": 12,
       "source": "tag: TAG,",
@@ -942,7 +942,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16234,
+      "line": 16246,
       "occurrence": 1,
       "column": 26,
       "source": "site_tag:          TAG,",
@@ -950,7 +950,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16257,
+      "line": 16269,
       "occurrence": 1,
       "column": 29,
       "source": "site_tag:             TAG,",
@@ -958,7 +958,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16292,
+      "line": 16304,
       "occurrence": 1,
       "column": 18,
       "source": "siteTag: TAG,",
@@ -966,7 +966,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16675,
+      "line": 16687,
       "occurrence": 1,
       "column": 49,
       "source": "const _buildLedger = createLedger(_run.runId, TAG, userMessage);",
@@ -974,7 +974,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16681,
+      "line": 16693,
       "occurrence": 1,
       "column": 20,
       "source": "site_tag:      TAG,",
@@ -982,7 +982,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 16702,
+      "line": 16714,
       "occurrence": 1,
       "column": 24,
       "source": "site_tag:      TAG,",
@@ -990,7 +990,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 17116,
+      "line": 17128,
       "occurrence": 1,
       "column": 12,
       "source": "tag: TAG, hubRoot: HUB_ROOT,",
@@ -998,7 +998,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 17513,
+      "line": 17525,
       "occurrence": 1,
       "column": 12,
       "source": "tag: TAG, hubRoot: HUB_ROOT,",
@@ -1006,7 +1006,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 17602,
+      "line": 17614,
       "occurrence": 1,
       "column": 22,
       "source": "ws.currentSite   = TAG;             // active site at connection time",
@@ -1014,7 +1014,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 17637,
+      "line": 17649,
       "occurrence": 1,
       "column": 85,
       "source": "let welcomeMsg = `Welcome back! Session #${studioState.session_count + 1} for ${TAG}.`;",
@@ -1022,7 +1022,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 18395,
+      "line": 18407,
       "occurrence": 1,
       "column": 32,
       "source": "// createSite() owns TAG switch + WS notify; this handler owns user-visible chat surfaces.",
@@ -1030,7 +1030,15 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 18488,
+      "line": 18476,
+      "occurrence": 1,
+      "column": 47,
+      "source": "runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist-vnext' });",
+      "classification": "authority-read",
+      "site_tag_source": "Chat-path deploy: the operator's selected site is captured ONCE into ctx at dispatch; the deploy-runner completion path reads only ctx.siteTag, never the ambient TAG again."
+    },
+    {
+      "line": 18504,
       "occurrence": 1,
       "column": 110,
       "source": "handleChatMessage(ws, `Build this site based on the design brief. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}`, 'build', spec);",
@@ -1038,7 +1046,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 18623,
+      "line": 18639,
       "occurrence": 1,
       "column": 49,
       "source": "if (!match.used_in.includes(TAG)) {",
@@ -1046,7 +1054,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 18624,
+      "line": 18640,
       "occurrence": 1,
       "column": 42,
       "source": "match.used_in.push(TAG);",
@@ -1054,7 +1062,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 18826,
+      "line": 18842,
       "occurrence": 1,
       "column": 136,
       "source": "handleChatMessage(ws, `Build this site based on the approved design brief. Follow it precisely. Site name: ${spec.site_name || TAG}. Pages to generate: ${pagesList}`, 'build', spec);",
@@ -1062,7 +1070,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 18970,
+      "line": 18986,
       "occurrence": 1,
       "column": 70,
       "source": "const args = [path.join(HUB_ROOT, 'scripts', 'orchestrator-site'), TAG];",
@@ -1070,31 +1078,39 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19026,
+      "line": 19022,
       "occurrence": 1,
-      "column": 51,
-      "source": "console.log(`[deploy] starting env=${env} tag=${TAG}`);",
-      "classification": "ui-preference",
-      "site_tag_source": "TAG only reaches the operator as display text. May keep reading the operator's selected site after migration; no server authority change required."
+      "column": 4,
+      "source": "// TAG. The tag-scoped readSpecForTag/writeSpecForTag pair satisfies the",
+      "classification": "unrelated",
+      "site_tag_source": "Comment naming the contract; no authority read."
     },
     {
-      "line": 19045,
+      "line": 19037,
       "occurrence": 1,
-      "column": 64,
-      "source": "const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];",
+      "column": 48,
+      "source": "// The legacy appendConvo is ambient (global TAG paths). For an explicit",
+      "classification": "unrelated",
+      "site_tag_source": "Comment naming the contract; no authority read."
+    },
+    {
+      "line": 19040,
+      "occurrence": 1,
+      "column": 33,
+      "source": "if (!siteTag || siteTag === TAG) return appendConvo(entry);",
       "classification": "authority-read",
-      "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
+      "site_tag_source": "Comparison only: decides whether the explicit deploy site IS the operator's ambient site, in which case the legacy ambient appendConvo is reused. Non-ambient sites append to their own conversation log by explicit tag."
     },
     {
-      "line": 19124,
+      "line": 19050,
       "occurrence": 1,
-      "column": 64,
-      "source": "studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });",
+      "column": 17,
+      "source": "getTag: () => TAG,",
       "classification": "authority-read",
-      "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
+      "site_tag_source": "Ambient fallback for the legacy no-ctx deploy-runner path (WS chat deploy without an explicit ctx). The HTTP route always passes ctx.siteTag, so this fallback is never consulted there."
     },
     {
-      "line": 19234,
+      "line": 19141,
       "occurrence": 1,
       "column": 18,
       "source": "const ghName = TAG.replace(/^site-/, '');",
@@ -1102,7 +1118,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19295,
+      "line": 19202,
       "occurrence": 1,
       "column": 40,
       "source": "const repoPath = path.join(basePath, TAG);",
@@ -1110,7 +1126,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19298,
+      "line": 19205,
       "occurrence": 1,
       "column": 38,
       "source": "const siteName = spec.site_name || TAG;",
@@ -1118,7 +1134,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19311,
+      "line": 19218,
       "occurrence": 1,
       "column": 68,
       "source": "_tryGhRepoCreate(ws, spec, existingRepoPath, spec.site_name || TAG);",
@@ -1126,7 +1142,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19357,
+      "line": 19264,
       "occurrence": 1,
       "column": 48,
       "source": "`  cd ~/famtastic && fam-hub site chat ${TAG}`,",
@@ -1134,7 +1150,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19397,
+      "line": 19304,
       "occurrence": 1,
       "column": 46,
       "source": "`- Studio command: fam-hub site chat ${TAG}`,",
@@ -1142,7 +1158,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19408,
+      "line": 19315,
       "occurrence": 1,
       "column": 60,
       "source": "`**Studio:** \\`cd ~/famtastic && fam-hub site chat ${TAG}\\``,",
@@ -1150,7 +1166,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19614,
+      "line": 19521,
       "occurrence": 1,
       "column": 110,
       "source": "const commitChild = spawn('git', ['commit', '-m', `${targetBranch === 'dev' ? 'WIP' : 'Deploy'}: ${TAG} — ${timestamp}`],",
@@ -1158,7 +1174,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19633,
+      "line": 19540,
       "occurrence": 1,
       "column": 17,
       "source": "const args = [TAG, assetType];",
@@ -1166,7 +1182,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19700,
+      "line": 19607,
       "occurrence": 1,
       "column": 48,
       "source": "const line = JSON.stringify({ ...entry, tag: TAG, session_id: sessionId }) + '\\n';",
@@ -1174,7 +1190,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19856,
+      "line": 19763,
       "occurrence": 1,
       "column": 87,
       "source": "logSDKCall({ provider: 'claude', model, callSite, inputTokens, outputTokens, tag: TAG, hubRoot: HUB_ROOT });",
@@ -1182,7 +1198,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19949,
+      "line": 19856,
       "occurrence": 1,
       "column": 39,
       "source": "const child = spawn(adapterScript, [TAG], {",
@@ -1190,7 +1206,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19969,
+      "line": 19876,
       "occurrence": 1,
       "column": 65,
       "source": "studioEvents.emit(STUDIO_EVENTS.BRAIN_SWITCHED, { brain, tag: TAG });",
@@ -1198,7 +1214,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 19972,
+      "line": 19879,
       "occurrence": 1,
       "column": 39,
       "source": "try { brainInjector.reinject(brain, TAG, HUB_ROOT); } catch {}",
@@ -1206,7 +1222,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 20445,
+      "line": 20352,
       "occurrence": 1,
       "column": 28,
       "source": "// Validate the restored TAG before listening — prevents requests hitting a non-existent site dir",
@@ -1214,7 +1230,7 @@
       "site_tag_source": "Substring-only or prose match (not a standalone TAG authority read); no migration needed."
     },
     {
-      "line": 20446,
+      "line": 20353,
       "occurrence": 1,
       "column": 44,
       "source": "if (!fs.existsSync(path.join(SITES_ROOT, TAG))) {",
@@ -1222,7 +1238,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 20447,
+      "line": 20354,
       "occurrence": 1,
       "column": 45,
       "source": "console.log(`[site-studio] Last site \"${TAG}\" not found, falling back to site-demo`);",
@@ -1230,7 +1246,7 @@
       "site_tag_source": "TAG only reaches the operator as display text. May keep reading the operator's selected site after migration; no server authority change required."
     },
     {
-      "line": 20448,
+      "line": 20355,
       "occurrence": 1,
       "column": 5,
       "source": "TAG = 'site-demo';",
@@ -1238,7 +1254,7 @@
       "site_tag_source": "A write to the global TAG binding. Migration: return the new siteTag to the caller instead of mutating the shared global."
     },
     {
-      "line": 20450,
+      "line": 20357,
       "occurrence": 1,
       "column": 17,
       "source": "writeLastSite(TAG);",
@@ -1246,7 +1262,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 20500,
+      "line": 20419,
       "occurrence": 1,
       "column": 44,
       "source": "console.log(`[site-studio] Site tag: ${TAG}`);",
@@ -1254,7 +1270,7 @@
       "site_tag_source": "TAG only reaches the operator as display text. May keep reading the operator's selected site after migration; no server authority change required."
     },
     {
-      "line": 20511,
+      "line": 20430,
       "occurrence": 1,
       "column": 25,
       "source": "getTag:     () => TAG,",
@@ -1262,7 +1278,7 @@
       "site_tag_source": "TAG decides which site is operated on here. Migration: thread an explicit siteTag (req.ctx.siteTag / run record) to this call site and delete the ambient read."
     },
     {
-      "line": 20522,
+      "line": 20441,
       "occurrence": 1,
       "column": 61,
       "source": "studioEvents.emit(STUDIO_EVENTS.SESSION_STARTED, { tag: TAG });",
