@@ -9,6 +9,7 @@
     "dev": "FAMTASTIC_USE_RUNTIME_VNEXT=1 node server.js",
     "studio": "while true; do FAMTASTIC_USE_RUNTIME_VNEXT=1 node server.js; echo '[studio] server exited — restarting in 1s...'; sleep 1; done",
     "test": "vitest run",
+    "test:operator-v1": "vitest run tests/operator-v1-release.test.js",
     "test:immutable-target": "vitest run tests/deploy-immutable-target.test.js",
     "test:watch": "vitest"
   },
