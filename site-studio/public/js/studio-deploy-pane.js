@@ -1,10 +1,19 @@
 (function () {
+  // Explicit site authority: /api/verify and /api/deploy 400 (site_tag_required)
+  // without an explicit siteTag. The active tag lives on window.config.tag.
+  function activeSiteTag() {
+    return (window.config && window.config.tag) || null;
+  }
+
   window.refreshDeployInfo = function refreshDeployInfo() {
     var area = document.getElementById('deploy-status-area');
     if (!area) return;
     area.textContent = 'Loading deploy status…';
 
-    var verifyP = fetch('/api/verify').then(function(r){ return r.json(); }).catch(function(){ return null; });
+    var tag = activeSiteTag();
+    var verifyP = tag
+      ? fetch('/api/verify?siteTag=' + encodeURIComponent(tag)).then(function(r){ return r.json(); }).catch(function(){ return null; })
+      : Promise.resolve(null);
     var stateP  = fetch('/api/studio-state').then(function(r){ return r.json(); }).catch(function(){ return null; });
 
     Promise.all([verifyP, stateP]).then(function(results) {
@@ -85,9 +94,19 @@
     refreshBtn.style.cssText = 'margin-top:10px;font-size:11px;padding:4px 10px;background:var(--fam-bg);border:1px solid var(--fam-border);border-radius:4px;color:var(--fam-text-2);cursor:pointer;';
     refreshBtn.textContent = '↻ Re-verify';
     refreshBtn.addEventListener('click', function() {
+      var tag = activeSiteTag();
+      if (!tag) {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = '↻ Re-verify — select a site first';
+        return;
+      }
       refreshBtn.disabled = true;
       refreshBtn.textContent = 'Verifying…';
-      fetch('/api/verify', { method: 'POST' }).then(function(r){ return r.json(); }).then(function() {
+      fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteTag: tag }),
+      }).then(function(r){ return r.json(); }).then(function() {
         window.refreshDeployInfo();
       }).catch(function() {
         refreshBtn.disabled = false;
@@ -201,6 +220,11 @@
 
   window.deployVia = async function deployVia(env) {
     const label = env === 'production' ? 'production' : 'staging';
+    const tag = activeSiteTag();
+    if (!tag) {
+      window.addMessage('assistant', 'Deploy is disabled: no site is selected. Pick a site first — the deploy requires an explicit site tag.');
+      return;
+    }
     window.addMessage('user', `Deploy to ${label}`);
     window.steps = [];
     window.stepStart = null;
@@ -209,7 +233,7 @@
       const resp = await fetch('/api/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ env: label }),
+        body: JSON.stringify({ env: label, siteTag: tag }),
       });
       const body = await resp.json().catch(() => ({}));
       if (!resp.ok || !body.ok) {
