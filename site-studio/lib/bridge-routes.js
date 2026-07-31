@@ -5,10 +5,37 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 
+const { requireLoopback } = require('./security');
+
 const router = express.Router();
 const FAM_ROOT = path.resolve(process.env.HOME, 'famtastic');
 
-const ALLOWED_COMMANDS = ['git', 'npm', 'node', 'bash', 'cat', 'ls', 'sed'];
+// The bridge previously allowed `bash`, `npm`, `node`, and `sed` and ran the raw
+// string through `bash -c`, which is unconstrained remote code execution. Only
+// read-oriented inspection commands remain, they are exec'd without a shell, and
+// git is restricted to non-mutating subcommands.
+const ALLOWED_COMMANDS = ['git', 'cat', 'ls'];
+const ALLOWED_GIT_SUBCOMMANDS = new Set([
+  'status', 'log', 'diff', 'show', 'branch', 'remote', 'rev-parse', 'describe', 'blame',
+]);
+// Anything a shell would interpret. Rejected outright rather than escaped.
+const SHELL_METACHARACTERS = /[;&|`$(){}<>\\!*?\[\]\n\r"']/;
+
+/**
+ * Split a command string into argv, rejecting shell metacharacters. Returns null
+ * if the input could mean something different to a shell than it does here.
+ */
+function parseArgv(command) {
+  const trimmed = String(command).trim();
+  if (!trimmed || SHELL_METACHARACTERS.test(trimmed)) return null;
+  const argv = trimmed.split(/\s+/);
+  return argv.length ? argv : null;
+}
+
+/** Every non-flag argument must resolve inside ~/famtastic. */
+function argsStayInRoot(args) {
+  return args.every((arg) => arg.startsWith('-') || resolveSafe(arg) !== null);
+}
 
 function resolveSafe(relPath) {
   const resolved = path.resolve(FAM_ROOT, relPath);
@@ -104,16 +131,30 @@ router.post('/diff', (req, res) => {
 });
 
 // POST /api/bridge/exec  { command }
-router.post('/exec', (req, res) => {
+router.post('/exec', requireLoopback, (req, res) => {
   const { command } = req.body || {};
   if (!command) return res.status(400).json({ error: 'command required' });
 
-  const bin = command.trim().split(/\s+/)[0];
+  const argv = parseArgv(command);
+  if (!argv) {
+    return res.status(400).json({ error: 'Command contains shell metacharacters or is empty.' });
+  }
+
+  const [bin, ...args] = argv;
   if (!ALLOWED_COMMANDS.includes(bin)) {
     return res.status(403).json({ error: `Command not allowed: ${bin}. Allowed: ${ALLOWED_COMMANDS.join(', ')}` });
   }
+  if (bin === 'git' && !ALLOWED_GIT_SUBCOMMANDS.has(args[0])) {
+    return res.status(403).json({
+      error: `git subcommand not allowed: ${args[0] || '(none)'}. Allowed: ${[...ALLOWED_GIT_SUBCOMMANDS].join(', ')}`,
+    });
+  }
+  if (!argsStayInRoot(args)) {
+    return res.status(403).json({ error: 'Argument path escapes ~/famtastic' });
+  }
 
-  execFile('bash', ['-c', command.trim()], { cwd: FAM_ROOT, timeout: 20000 }, (err, stdout, stderr) => {
+  // No shell: argv is passed directly, so nothing is re-interpreted.
+  execFile(bin, args, { cwd: FAM_ROOT, timeout: 20000, maxBuffer: 4 * 1024 * 1024 }, (err, stdout, stderr) => {
     res.json({
       stdout: stdout || '',
       stderr: stderr || '',

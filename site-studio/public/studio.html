@@ -14,6 +14,9 @@
 <body class="studio-body">
   <div id="studio-root" class="studio-shell"></div>
 
+  <!-- Operator V1: the single credentialed /api seam. MUST load before any
+       other script — it wraps window.fetch and window.WebSocket. -->
+  <script src="/js/studio-api-client.js"></script>
   <!-- React + Babel pinned (matches design template; replace with bundler later) -->
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>

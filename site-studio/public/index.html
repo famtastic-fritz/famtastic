@@ -6,6 +6,8 @@
   <title>FAMtastic Site Studio</title>
   <!-- Embedded mode: when ?embedded=1, hide top chrome so this page can be
        iframed inside the unified Studio shell (/studio.html). No-op otherwise. -->
+  <!-- Operator V1: credentialed /api seam — MUST be the first script. -->
+  <script src="js/studio-api-client.js"></script>
   <script src="js/studio-embedded-mode.js"></script>
   <style>
     /* The actual top chrome is <div id="top-bar"> (an id, not a class).

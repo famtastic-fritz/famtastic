@@ -44,6 +44,14 @@ const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('.
 const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
 const { buildSiteQualityFlowContext } = require('../lib/famtastic/site-quality-flow');
 const logger = require('./lib/logger');
+// Operator V1 — containment + request-context primitives (ported from
+// feature/site-studio-runtime-vnext-closeout, Phase A).
+const {
+  requireLoopback,
+  isLoopbackRequest,
+  terminalEnabled,
+} = require('./lib/security');
+const { requestContext } = require('./lib/request-context');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -64,7 +72,12 @@ let TAG = process.env.SITE_TAG || readLastSite() || 'site-demo';
 const RECENT_CONVO_COUNT = 15; // Recent conversation turns to include in prompt context
 const serverStartedAt = new Date().toISOString();
 const HUB_ROOT = path.resolve(__dirname, '..');
-const SITES_ROOT = path.join(HUB_ROOT, 'sites');
+// STUDIO_SITES_ROOT exists so tests can boot the real server against a fully
+// temporary sites tree (same pattern as STUDIO_TOKEN_PATH / RUNTIME_VNEXT_DB_PATH)
+// instead of writing into the operator's canonical hub sites root.
+const SITES_ROOT = process.env.STUDIO_SITES_ROOT
+  ? path.resolve(process.env.STUDIO_SITES_ROOT)
+  : path.join(HUB_ROOT, 'sites');
 
 // Cache hub repo info at startup (doesn't change at runtime)
 let _hubRepoCache = null;
@@ -943,6 +956,13 @@ function listPages() {
 // --- Express app ---
 const app = express();
 app.use(express.json());
+// Operator V1 — resolve { siteTag, runId, requestId } onto req.ctx.
+// Mounted after express.json() so a body-carried siteTag is visible, and before
+// every router so req.ctx exists everywhere. A malformed tag in the body, query
+// or x-site-tag header is rejected here with 400, and so is a traversal-shaped
+// PATH segment (scanned on the raw URL, because req.params is still {} at
+// app.use time).
+app.use(requestContext());
 app.use(logger.middleware());
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
@@ -955,6 +975,186 @@ app.use(express.static(path.join(__dirname, 'public'), {
     res.set('Cache-Control', 'no-cache');
   },
 }));
+
+// Containment: no /api route is reachable from off-host. The preview server on
+// PREVIEW_PORT is unaffected — it serves only built static output and is the
+// surface you actually want on the LAN.
+app.use('/api', requireLoopback);
+
+// ---------------------------------------------------------------------------
+// Operator V1 — AUTHENTICATION WIRING
+// ---------------------------------------------------------------------------
+// lib/auth.js is the credential check. This block is the only place it is
+// mounted. requireLoopback above STAYS as defense in depth: containment and
+// authentication answer different questions ("can a LAN host reach this?" vs
+// "is this caller the operator?").
+//
+// ENFORCEMENT IS ON BY DEFAULT. STUDIO_REQUIRE_AUTH=0 is the explicit opt-out
+// (logged loudly at boot); any other value — including unset — enforces.
+// The frontend in public/ carries credentials via the studio-api-client seam
+// (bootstrap + CSRF header), so the Studio UI works under enforcement.
+// The flag is read PER REQUEST (not captured at module load) so the
+// state is observable and testable without a restart.
+//
+// When enforcement is off, credentials are still RESOLVED (req.auth is set when
+// valid credentials are present) but never REQUIRED. Boot logs say loudly which
+// state the process is in — see the banner in the listen() block.
+const { createAuth, SESSION_COOKIE, parseCookies: parseAuthCookies } = require('./lib/auth');
+
+// STUDIO_TOKEN_PATH exists so tests never touch the operator's real
+// ~/.config/famtastic/studio-token. Production leaves it unset.
+const studioAuth = createAuth(
+  process.env.STUDIO_TOKEN_PATH ? { tokenPath: process.env.STUDIO_TOKEN_PATH } : {},
+);
+
+function authEnforced() {
+  // Enforced by default. Only the explicit string '0' opts out; anything else
+  // (unset, '1', garbage) enforces. Fail closed, not fail open.
+  return process.env.STUDIO_REQUIRE_AUTH !== '0';
+}
+
+/**
+ * Wrap an auth middleware so it only REJECTS when enforcement is on. With the
+ * flag off it still resolves a principal onto req.auth when credentials happen
+ * to be present, then calls next() unconditionally.
+ */
+function enforceAuth(middleware) {
+  return function authEnforcementGate(req, res, next) {
+    if (authEnforced()) return middleware(req, res, next);
+    if (!req.auth) {
+      try {
+        const resolved = studioAuth.authenticateHeaders(req.headers || {});
+        if (resolved.ok) req.auth = resolved.principal;
+      } catch { /* advisory only when unenforced */ }
+    }
+    return next();
+  };
+}
+
+/**
+ * The dangerous surface: anything that executes code, rewrites operator
+ * settings, or changes site lifecycle. Paths are relative to the /api mount.
+ * A session reaches these only after re-presenting the root token at
+ * /api/auth/elevate; a Bearer caller is privileged by construction.
+ */
+const PRIVILEGED_API_ROUTES = [
+  { method: 'POST',   pattern: /^\/bridge\/exec\/?$/ },          // shell exec
+  { method: 'POST',   pattern: /^\/codex\/exec\/?$/ },            // agent w/ fs write
+  { method: 'PUT',    pattern: /^\/settings\/?$/ },               // settings write
+  { method: 'PUT',    pattern: /^\/site-settings\/?$/ },          // settings write
+  { method: 'DELETE', pattern: /^\/site-settings\/?$/ },
+  { method: 'POST',   pattern: /^\/sites\/?$/ },                  // lifecycle
+  { method: 'POST',   pattern: /^\/new-site\/?$/ },
+  { method: 'POST',   pattern: /^\/switch-site\/?$/ },
+  { method: 'DELETE', pattern: /^\/projects\/[^/]+\/?$/ },
+  { method: '*',      pattern: /^\/terminal(?:\/.*)?$/ },         // interactive shell
+  // Operator V1 mutations — build / deploy / surgical edit / verify. Status
+  // reads (GET build-vnext/status, GET deploy-status, GET content-fields/*,
+  // GET verify, GET preview-url) are authenticated but NOT elevated.
+  { method: 'POST',   pattern: /^\/site-studio\/build-vnext\/?$/ },
+  { method: 'POST',   pattern: /^\/deploy\/?$/ },
+  { method: 'POST',   pattern: /^\/content-field\/?$/ },
+  { method: 'POST',   pattern: /^\/verify\/?$/ },
+];
+
+/** @param {string} method @param {string} apiPath path WITHOUT the /api prefix */
+function isPrivilegedApiRequest(method, apiPath) {
+  const m = String(method || '').toUpperCase();
+  const p = String(apiPath || '');
+  return PRIVILEGED_API_ROUTES.some(
+    (r) => (r.method === '*' || r.method === m) && r.pattern.test(p),
+  );
+}
+
+// --- Bootstrap / elevate / logout: the allow-list, mounted BEFORE requireAuth.
+// These are the only /api routes that must be reachable without a session, and
+// each one verifies the root token itself.
+function presentedRootToken(req) {
+  const header = req.headers && (req.headers.authorization || req.headers.Authorization);
+  if (typeof header === 'string') {
+    const m = /^Bearer[ ]+(.+)$/.exec(header.trim());
+    if (m) return m[1].trim();
+  }
+  const body = req.body;
+  if (body && typeof body.token === 'string') return body.token;
+  return null;
+}
+
+// Exchange the root token for an HttpOnly session cookie. The response carries
+// the CSRF token (which the client MUST echo on mutations) and never the token.
+app.post('/api/auth/bootstrap', (req, res) => {
+  const result = studioAuth.bootstrapSession(presentedRootToken(req));
+  if (!result) return res.status(401).json({ error: 'Authentication required', code: 'invalid_token' });
+  res.set('Set-Cookie', result.cookie);
+  return res.json({
+    ok: true,
+    csrfToken: result.csrfToken,
+    expiresAt: result.session.expiresAt,
+    enforced: authEnforced(),
+  });
+});
+
+// Re-auth: opens the short privileged window on an existing session.
+app.post('/api/auth/elevate', (req, res) => {
+  const sid = parseAuthCookies(req.headers && req.headers.cookie)[SESSION_COOKIE];
+  const record = studioAuth.elevate(sid, presentedRootToken(req));
+  if (!record) return res.status(401).json({ error: 'Authentication required', code: 'reauth_failed' });
+  return res.json({ ok: true, privilegedUntil: record.privilegedUntil });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const sid = parseAuthCookies(req.headers && req.headers.cookie)[SESSION_COOKIE];
+  const revoked = studioAuth.revokeSession(sid);
+  res.set('Set-Cookie', studioAuth.clearSessionCookie());
+  return res.json({ ok: true, revoked });
+});
+
+// Non-secret state readout so the operator (and the frontend client) can tell
+// whether auth is enforced without guessing. Never exposes the token.
+app.get('/api/auth/status', (req, res) => {
+  const resolved = studioAuth.authenticateHeaders(req.headers || {});
+  // The CSRF token is returned ONLY to a caller that already presented a valid
+  // SESSION cookie — i.e. to a page that is already authenticated as the
+  // operator. This is the recovery path for a client holding a good session but
+  // no usable CSRF token (second tab after a re-bootstrap elsewhere, cleared
+  // site data with a live cookie, partitioned or blocked localStorage, or
+  // opening a page with ?studio_token= while an earlier session cookie is
+  // still present). Without this, every mutation in that tab 403s until a
+  // manual reload.
+  //
+  // Safe to expose here: the session cookie is HttpOnly and same-origin, and a
+  // cross-origin page cannot read this response because no CORS headers are set.
+  // A bearer-authenticated caller gets nothing — bearer callers do not use CSRF.
+  const isSession = resolved.ok && resolved.principal.kind === 'session';
+  return res.json({
+    enforced: authEnforced(),
+    authenticated: resolved.ok,
+    kind: resolved.ok ? resolved.principal.kind : null,
+    scopes: resolved.ok ? resolved.principal.scopes : [],
+    csrfToken: isSession ? (resolved.principal.session || {}).csrfToken || null : null,
+  });
+});
+
+// --- The gate itself. Everything mounted BELOW this line is authenticated.
+app.use('/api', enforceAuth(studioAuth.requireAuth()));
+
+// --- Privileged scope on the dangerous surface.
+const requirePrivilegedApi = enforceAuth(studioAuth.requirePrivileged());
+app.use('/api', (req, res, next) => {
+  if (!isPrivilegedApiRequest(req.method, req.path)) return next();
+  return requirePrivilegedApi(req, res, next);
+});
+
+/**
+ * WebSocket upgrade gate, used by BOTH the Studio WS and the PTY WS. On failure
+ * lib/auth.js writes a 401/403 status line and DESTROYS the socket — it is
+ * never handed to WebSocketServer.handleUpgrade. Returns true if the upgrade
+ * may proceed.
+ */
+function authorizeUpgrade(request, socket, opts = {}) {
+  if (!authEnforced()) return true;
+  return studioAuth.guardUpgrade(request, socket, opts) !== null;
+}
 
 // Bridge routes — mounted before CSRF so internal Studio tool calls pass through
 app.use('/api/bridge', require('./lib/bridge-routes'));
@@ -995,6 +1195,12 @@ const { broadcastJson, attachTerminalUpgradeHandler, setupFileWatcherRuntime } =
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+  // Operator V1: a Bearer-authenticated caller is not a browser — CSRF does not
+  // apply to it (the origin allow-list exists to stop cross-site pages riding a
+  // cookie). lib/auth requireAuth has already set req.auth by this point; only
+  // session-cookie callers still need the origin gate. This mirrors the feature
+  // branch, where route ordering lets bearer mutations reach their handlers.
+  if (req.auth && req.auth.kind === 'bearer') return next();
   const origin = req.get('origin') || req.get('referer') || '';
   const allowed = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
   if (!allowed.some(a => origin.startsWith(a))) {
@@ -20009,7 +20215,9 @@ app.delete('/api/terminal/:termId', (req, res) => {
   res.json({ success: true });
 });
 
-attachTerminalUpgradeHandler({ server, wss, terminals });
+const handleStudioUpgrade = attachTerminalUpgradeHandler({
+  server, wss, terminals, authorizeUpgrade, isLoopbackRequest, terminalEnabled,
+});
 
 async function gracefulShutdown() {
   await endSession();
@@ -20101,6 +20309,8 @@ module.exports = {
   fileInspect, browserInspect, inspectSite,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
+  // Operator V1 — auth wiring (see Phase A port)
+  handleStudioUpgrade, studioAuth, authEnforced, isPrivilegedApiRequest,
   // Session tracking
   calculateSessionCost, getContextPercentage,
 };
@@ -20239,6 +20449,22 @@ if (require.main === module) {
   });
 
   server.listen(PORT, () => {
+    // Operator V1 — ensure the root credential exists before the port opens,
+    // and say WHERE it lives. The value itself is never logged, never printed,
+    // and never returned by any route.
+    try {
+      const tokenInfo = studioAuth.ensureToken();
+      console.log(`[auth] root token ${tokenInfo.created ? 'generated' : 'loaded'} (mode 0600) at ${tokenInfo.path}`);
+    } catch (err) {
+      console.error(`[auth] FAILED to establish root token: ${err.message}`);
+    }
+    if (authEnforced()) {
+      console.log('[security] AUTHENTICATION ENFORCED (default) on all /api routes and both WebSocket upgrades. Set STUDIO_REQUIRE_AUTH=0 to opt out.');
+    } else {
+      console.warn('[security] AUTH NOT ENFORCED — STUDIO_REQUIRE_AUTH=0 explicit opt-out.');
+      console.warn('[security] /api and both WebSocket upgrades accept ANY loopback caller, including any page in the operator browser.');
+      console.warn('[security] This is a deliberate, logged opt-out. Unset STUDIO_REQUIRE_AUTH (or set it to 1) to require credentials.');
+    }
     console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
     console.log(`[site-studio] Site tag: ${TAG}`);
     console.log(`[site-studio] Preview at: http://localhost:${PREVIEW_PORT}`);
