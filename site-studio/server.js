@@ -49,6 +49,7 @@ const logger = require('./lib/logger');
 const {
   requireLoopback,
   isLoopbackRequest,
+  isSafeTag,
   terminalEnabled,
 } = require('./lib/security');
 const { requestContext } = require('./lib/request-context');
@@ -91,6 +92,10 @@ try {
 // Derived paths — recomputed on site switch
 function SITE_DIR() { return path.join(SITES_ROOT, TAG); }
 function DIST_DIR() { return path.join(SITE_DIR(), 'dist'); }
+// Operator V1 — explicit-tag path helpers. The V1 artifact tree is
+// sites/<tag>/dist-vnext; these never silently fall back to dist.
+function siteDirFor(siteTag) { return path.join(SITES_ROOT, siteTag); }
+function DIST_VNEXT_DIR(siteTag) { return path.join(siteTag ? siteDirFor(siteTag) : SITE_DIR(), 'dist-vnext'); }
 function CONVO_FILE() { return path.join(SITE_DIR(), 'conversation.jsonl'); }
 function SPEC_FILE() { return path.join(SITE_DIR(), 'spec.json'); }
 function STUDIO_FILE() { return path.join(SITE_DIR(), '.studio.json'); }
@@ -175,6 +180,20 @@ const {
   normalizeTierAndMode,
   normalizeRequiredFields,
 });
+
+// Operator V1 — tag-scoped spec access. The V1 routes resolve their site
+// explicitly (req.ctx.siteTag) and must read/write THAT site's spec, never the
+// ambient one. Writes go through writeSpecForSite, which is atomic
+// (temp file + rename). Zero-tag calls keep the legacy ambient behavior so the
+// route modules can share one pair of functions.
+function readSpecForTag(siteTag) {
+  return siteTag ? readSpecForSite(siteDirFor(siteTag)) : readSpec();
+}
+function writeSpecForTag(spec, options = {}) {
+  const tag = options.siteTag;
+  if (!tag) return writeSpec(spec, options);
+  return writeSpecForSite(siteDirFor(tag), spec);
+}
 
 // Initialize tool handlers with server context
 // TAG and HUB_ROOT are defined above; getSiteDir returns the mutable current SITE_DIR()
@@ -941,16 +960,21 @@ function startSession() {
   return studio;
 }
 
-// Helper: list HTML pages in dist
-function listPages() {
-  if (!fs.existsSync(DIST_DIR())) return [];
-  return fs.readdirSync(DIST_DIR())
+// Helper: list HTML pages in an arbitrary dist directory (index.html first)
+function listPagesInDir(distDir) {
+  if (!fs.existsSync(distDir)) return [];
+  return fs.readdirSync(distDir)
     .filter(f => f.endsWith('.html') && !f.startsWith('_'))
     .sort((a, b) => {
       if (a === 'index.html') return -1;
       if (b === 'index.html') return 1;
       return a.localeCompare(b);
     });
+}
+
+// Helper: list HTML pages in dist
+function listPages() {
+  return listPagesInDir(DIST_DIR());
 }
 
 // --- Express app ---
@@ -1144,6 +1168,59 @@ app.use('/api', (req, res, next) => {
   if (!isPrivilegedApiRequest(req.method, req.path)) return next();
   return requirePrivilegedApi(req, res, next);
 });
+
+// ---------------------------------------------------------------------------
+// Operator V1 — runtime-vnext build route + verification routes
+// (ported from feature/site-studio-runtime-vnext-closeout; see those modules
+// for the adaptation notes). All V1 routes require an explicit siteTag and
+// operate on the dist-vnext artifact tree only.
+// ---------------------------------------------------------------------------
+const { registerRuntimeVnextBuildRoute } = require('./server/runtime-vnext-build-route');
+registerRuntimeVnextBuildRoute({
+  app,
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  getDistVnextDir: DIST_VNEXT_DIR,
+  // The recipe's fixtures resolve relative to hubRoot, so hubRoot stays the
+  // site-studio dir. The CANONICAL site tree (spec read/write, dist-vnext
+  // publish) comes from readSpecForTag/writeSpecForTag/DIST_VNEXT_DIR, which
+  // are rooted at server.js's SITES_ROOT — not from projectContext.sites_root.
+  // STUDIO_VNEXT_HUB_ROOT lets a test relocate the runtime project/workspace
+  // tree (.project.json, runs/) into a temp dir that symlinks runtime-vnext
+  // back to this dir, so a booted server writes nothing into the repo.
+  hubRoot: process.env.STUDIO_VNEXT_HUB_ROOT
+    ? path.resolve(process.env.STUDIO_VNEXT_HUB_ROOT)
+    : __dirname,
+  recipePath: path.join(__dirname, 'runtime-vnext', 'recipes', 'deterministic-site-build.yaml'),
+  getPreviewPort: () => PREVIEW_PORT,
+});
+
+const { createVerificationRouter } = require('./server/verification-routes');
+app.use('/api', createVerificationRouter({
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  listPagesInDir,
+  runBuildVerification,
+  getDistVnextDir: DIST_VNEXT_DIR,
+}));
+
+// Content fields API — Operator V1 explicit-tag contract (ported from
+// feature/site-studio-runtime-vnext-closeout). Mounted HERE, before the legacy
+// cross-origin allow-list below, matching the feature's route ordering: V1
+// callers authenticate via lib/auth (session+CSRF or bearer), not the Origin
+// header. Both routes REQUIRE an explicit siteTag (400 site_tag_required
+// otherwise) and operate on the site's spec scoped to that tag. The legacy
+// zero-tag ambient behavior is removed on these routes — lib/auth.js already
+// names them privileged.
+const { createContentFieldRouter } = require('./server/content-field-routes');
+app.use('/api', createContentFieldRouter({
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  getDistVnextDir: DIST_VNEXT_DIR,
+  listPagesInDir,
+  studioEvents,
+  STUDIO_EVENTS,
+}));
 
 /**
  * WebSocket upgrade gate, used by BOTH the Studio WS and the PTY WS. On failure
@@ -6303,101 +6380,6 @@ ${lessons}
 }
 
 // --- Component Library API extracted to server/component-routes.js ---
-
-// Content fields API — used by editable page view (Phase 2)
-app.get('/api/content-fields/:page', (req, res) => {
-  const page = req.params.page;
-  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
-  const spec = readSpec();
-  const fields = spec.content?.[page]?.fields || [];
-  res.json({ page, fields, total: fields.length });
-});
-
-// Update a single content field — surgical edit endpoint
-app.post('/api/content-field', (req, res) => {
-  const { page, field_id, new_value } = req.body;
-  if (!page || !field_id || new_value === undefined) {
-    return res.status(400).json({ error: 'page, field_id, and new_value required' });
-  }
-
-  const spec = readSpec();
-  const field = spec.content?.[page]?.fields?.find(f => f.field_id === field_id);
-  if (!field) return res.status(404).json({ error: 'Field not found in spec.content' });
-
-  const oldValue = typeof field.value === 'string' ? field.value : (field.value?.text || JSON.stringify(field.value));
-
-  // Surgical HTML replacement
-  const pagePath = path.join(DIST_DIR(), page);
-  if (!fs.existsSync(pagePath)) return res.status(404).json({ error: 'Page HTML not found' });
-
-  let html = fs.readFileSync(pagePath, 'utf8');
-  const $ = cheerio.load(html);
-
-  // Try data-field-id selector first
-  const el = $(`[data-field-id="${field_id}"]`);
-  if (el.length > 0) {
-    el.text(new_value);
-    // Update href for phone/email
-    if (field.type === 'phone' && el.attr('href')?.startsWith('tel:')) {
-      el.attr('href', `tel:+1${new_value.replace(/\D/g, '')}`);
-    } else if (field.type === 'email' && el.attr('href')?.startsWith('mailto:')) {
-      el.attr('href', `mailto:${new_value}`);
-    }
-    fs.writeFileSync(pagePath, $.html());
-  } else if (html.includes(oldValue)) {
-    // Fallback: text match
-    html = html.replace(new RegExp(oldValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), new_value);
-    fs.writeFileSync(pagePath, html);
-  } else {
-    return res.status(404).json({ error: `Value "${oldValue}" not found in HTML` });
-  }
-
-  // Update spec for this page
-  field.value = new_value;
-
-  // Global field propagation — phone/email/address/hours update across all pages
-  const GLOBAL_FIELD_TYPES = ['phone', 'email', 'address', 'hours'];
-  const cascadePages = [];
-  if (GLOBAL_FIELD_TYPES.includes(field.type) || field.scope === 'global') {
-    const allPages = listPages().filter(p => p !== page);
-    for (const otherPage of allPages) {
-      const otherFields = spec.content?.[otherPage]?.fields || [];
-      // Find matching field by type or field_id on other pages
-      const matchField = otherFields.find(f =>
-        f.type === field.type || f.field_id === field_id ||
-        (f.field_id.includes(field.type) && f.type === field.type)
-      );
-      if (!matchField) continue;
-      const otherPath = path.join(DIST_DIR(), otherPage);
-      if (!fs.existsSync(otherPath)) continue;
-      let otherHtml = fs.readFileSync(otherPath, 'utf8');
-      const $2 = cheerio.load(otherHtml);
-      const otherEl = $2(`[data-field-id="${matchField.field_id}"]`);
-      if (otherEl.length > 0) {
-        otherEl.text(new_value);
-        if (field.type === 'phone' && otherEl.attr('href')?.startsWith('tel:')) {
-          otherEl.attr('href', `tel:+1${new_value.replace(/\D/g, '')}`);
-        } else if (field.type === 'email' && otherEl.attr('href')?.startsWith('mailto:')) {
-          otherEl.attr('href', `mailto:${new_value}`);
-        }
-        fs.writeFileSync(otherPath, $2.html());
-        matchField.value = new_value;
-        cascadePages.push(otherPage);
-      }
-    }
-  }
-
-  writeSpec(spec, {
-    source: 'content_field_api',
-    mutationLevel: 'field',
-    mutationTarget: field_id,
-    oldValue,
-    newValue: new_value,
-  });
-
-  studioEvents.emit(STUDIO_EVENTS.EDIT_APPLIED, { tag: TAG, page, field_id, new_value });
-  res.json({ success: true, field_id, old_value: oldValue, new_value, cascade_pages: cascadePages });
-});
 
 // GET /api/brain-status — current API connection status for all three brains + Codex
 app.get('/api/brain-status', (req, res) => {
@@ -15220,13 +15202,13 @@ function runPostProcessing(ws, writtenPages, options = {}) {
 // --- Build Verification System (Phase 1) ---
 // Zero-token, zero-latency file-based verification that runs after every build.
 
-function verifySlotAttributes(pages) {
+function verifySlotAttributes(pages, distDir = DIST_DIR()) {
   const issues = [];
   let totalSlots = 0;
   const transparentPixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15279,9 +15261,9 @@ function verifySlotAttributes(pages) {
   return { check: 'slot-attributes', status, issues, slotsChecked: totalSlots };
 }
 
-function verifyCssCoherence() {
+function verifyCssCoherence(distDir = DIST_DIR()) {
   const issues = [];
-  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+  const cssPath = path.join(distDir, 'assets', 'styles.css');
 
   if (!fs.existsSync(cssPath)) {
     return { check: 'css-coherence', status: 'failed', issues: ['styles.css not found'] };
@@ -15319,7 +15301,7 @@ function verifyCssCoherence() {
   return { check: 'css-coherence', status, issues };
 }
 
-function verifyCrossPageConsistency(pages) {
+function verifyCrossPageConsistency(pages, distDir = DIST_DIR()) {
   const issues = [];
   if (pages.length <= 1) return { check: 'cross-page-consistency', status: 'passed', issues: [] };
 
@@ -15328,7 +15310,7 @@ function verifyCrossPageConsistency(pages) {
   const fontUrls = {};
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15377,11 +15359,11 @@ function verifyCrossPageConsistency(pages) {
   return { check: 'cross-page-consistency', status, issues };
 }
 
-function verifyHeadDependencies(pages) {
+function verifyHeadDependencies(pages, distDir = DIST_DIR()) {
   const issues = [];
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15400,11 +15382,11 @@ function verifyHeadDependencies(pages) {
   return { check: 'head-dependencies', status, issues };
 }
 
-function verifyLogoAndLayout(pages) {
+function verifyLogoAndLayout(pages, distDir = DIST_DIR()) {
   const issues = [];
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15437,8 +15419,8 @@ function verifyLogoAndLayout(pages) {
   return { check: 'logo-and-layout', status, issues };
 }
 
-function verifyRevenueAndState() {
-  const spec = readSpec();
+function verifyRevenueAndState(siteTag, distDir = DIST_DIR()) {
+  const spec = siteTag ? readSpecForTag(siteTag) : readSpec();
   const issues = [];
   if (spec.state === 'client_approved' && !spec.monthly_rate) {
     issues.push('Site is client_approved but monthly_rate is not set — add a rate before sending payment link');
@@ -15446,9 +15428,8 @@ function verifyRevenueAndState() {
   if (spec.revenue_model === 'rank_and_rent' && !spec.monthly_rate) {
     issues.push('Rank-and-rent site has no monthly_rate set — set it in Settings → Site');
   }
-  const isReunion = /reunion|family.event/.test(TAG) || spec.business_type === 'family_reunion';
+  const isReunion = /reunion|family.event/.test(siteTag || TAG) || spec.business_type === 'family_reunion';
   if (isReunion) {
-    const distDir = DIST_DIR();
     const requiredPages = ['event-details.html', 'gallery.html'];
     for (const p of requiredPages) {
       if (!fs.existsSync(path.join(distDir, p))) {
@@ -15474,14 +15455,14 @@ function verifyRevenueAndState() {
   };
 }
 
-function runBuildVerification(pages) {
+function runBuildVerification(pages, distDir = DIST_DIR(), siteTag) {
   const checks = [
-    verifySlotAttributes(pages),
-    verifyCssCoherence(),
-    verifyCrossPageConsistency(pages),
-    verifyHeadDependencies(pages),
-    verifyLogoAndLayout(pages),
-    verifyRevenueAndState(),
+    verifySlotAttributes(pages, distDir),
+    verifyCssCoherence(distDir),
+    verifyCrossPageConsistency(pages, distDir),
+    verifyHeadDependencies(pages, distDir),
+    verifyLogoAndLayout(pages, distDir),
+    verifyRevenueAndState(siteTag, distDir),
   ];
 
   const overallStatus = checks.some(c => c.status === 'failed') ? 'failed'
@@ -20112,8 +20093,56 @@ const previewServer = http.createServer((req, res) => {
     return;
   }
 
-  const dist = DIST_DIR();
   const urlPath = req.url.split('?')[0];
+
+  // ── Operator V1 preview ──────────────────────────────────────────────────
+  // /vnext/<siteTag>/<page...> serves sites/<siteTag>/dist-vnext — the exact
+  // V1 artifact — for an EXPLICITLY named site. The legacy branch below keeps
+  // serving the ambient operator site's dist for legacy surfaces. A relative
+  // link inside a V1 page (assets/styles.css, about.html) stays under the
+  // /vnext/<tag>/ prefix, so the whole artifact is browsable.
+  // No fallback: a site with no vNext build is a 409, not the legacy dist.
+  if (urlPath.startsWith('/vnext/')) {
+    const rest = decodeURIComponent(urlPath.slice('/vnext/'.length));
+    const slash = rest.indexOf('/');
+    const tag = slash === -1 ? rest : rest.slice(0, slash);
+    const rel = (slash === -1 ? '' : rest.slice(slash + 1)) || 'index.html';
+    if (!isSafeTag(tag)) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('Invalid site tag');
+      return;
+    }
+    const vnextDist = DIST_VNEXT_DIR(tag);
+    if (!fs.existsSync(vnextDist) || !fs.existsSync(path.join(vnextDist, 'index.html'))) {
+      res.writeHead(409, { 'Content-Type': 'text/html' });
+      res.end(`<!DOCTYPE html><html><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8"><div style="text-align:center"><h2>No vNext build</h2><p>Site ${tag} has no dist-vnext artifact. Run a vNext build first.</p></div></body></html>`);
+      return;
+    }
+    let vnextFilePath = path.join(vnextDist, rel);
+    if (!vnextFilePath.startsWith(vnextDist + path.sep)) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('Invalid path');
+      return;
+    }
+    if (!fs.existsSync(vnextFilePath) && fs.existsSync(vnextFilePath + '.html')) vnextFilePath += '.html';
+    if (fs.existsSync(vnextFilePath) && fs.statSync(vnextFilePath).isDirectory()) vnextFilePath = path.join(vnextFilePath, 'index.html');
+    if (!fs.existsSync(vnextFilePath)) {
+      res.writeHead(404);
+      res.end('Not found');
+      return;
+    }
+    const vnextExt = path.extname(vnextFilePath);
+    const vnextMime = MIME_TYPES[vnextExt] || 'application/octet-stream';
+    let vnextContent = fs.readFileSync(vnextFilePath);
+    if (vnextExt === '.html') {
+      vnextContent = vnextContent.toString().replace('</body>', buildPreviewSelectionBridgeScript() + RELOAD_SCRIPT + '</body>');
+    }
+    res.writeHead(200, { 'Content-Type': vnextMime });
+    res.end(vnextContent);
+    return;
+  }
+
+  const dist = DIST_DIR();
   let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
   if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) filePath += '.html';
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
@@ -20309,6 +20338,8 @@ module.exports = {
   fileInspect, browserInspect, inspectSite,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
+  // Operator V1 — dist-vnext artifact authority (see Phase B port)
+  previewServer, listPagesInDir, readSpecForTag, writeSpecForTag, DIST_VNEXT_DIR,
   // Operator V1 — auth wiring (see Phase A port)
   handleStudioUpgrade, studioAuth, authEnforced, isPrivilegedApiRequest,
   // Session tracking
