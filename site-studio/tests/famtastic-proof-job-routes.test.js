@@ -77,14 +77,15 @@ describe('FAMtastic proof job contract', () => {
     fs.mkdirSync(path.join(root, 'assets'));
     fs.writeFileSync(path.join(root, 'assets', 'styles.css'), '.hero{color:tomato}');
     const artifact = path.join(root, 'index.html');
-    const html = '<html><head><meta name="description" content="Bakery proof"><script>bad()</script><link rel="stylesheet" href="assets/styles.css"></head><body><img src="assets/missing-logo.svg" alt="Copper Kettle"><div class="hero">Bread</div></body></html>';
+    const html = '<html><head><meta name="description" content="Bakery proof"><script>bad()</script><link rel="stylesheet" href="assets/styles.css"></head><body><img src="assets/missing-logo.svg" alt="Copper Kettle"><img data-slot-status="empty" data-slot-role="hero" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAA"><span>Transparent placeholder</span><p>Proof mode stays honest.</p><div class="hero">Bread</div></body></html>';
     const packaged = packageProofHtml(artifact, html);
     expect(packaged).toContain('.hero{color:tomato}');
     expect(packaged).toContain('proof-brand-wordmark">Copper Kettle');
     expect(packaged).toContain('content="Bakery proof"');
     expect(packaged).toContain('.fam-hero-layer--bg{z-index:0}');
+    expect(packaged).toContain('proof-media-fallback--hero');
     expect(packaged.indexOf('data-site-studio-shared')).toBeLessThan(packaged.indexOf('<meta name="description"'));
-    expect(packaged).not.toMatch(/<script|assets\/styles\.css|missing-logo/);
+    expect(packaged).not.toMatch(/<script|assets\/styles\.css|missing-logo|transparent placeholder|proof mode/i);
   });
 
   it('generates once, delivers exactly three artifacts, and reuses the durable idempotency result', async () => {
@@ -96,6 +97,7 @@ describe('FAMtastic proof job contract', () => {
       jobsDir: path.join(root, 'jobs'),
       outputRoot: path.join(root, 'proofs'),
       callbackSecret: 'callback-secret',
+      renderThumbnail: async () => ({ media_type: 'image/jpeg', data: 'dGh1bWI=' }),
       fetchImpl: async (_url, options) => {
         const expected = `sha256=${crypto.createHmac('sha256', 'callback-secret').update(options.body).digest('hex')}`;
         expect(options.headers['X-FAMtastic-Signature']).toBe(expected);
@@ -123,5 +125,7 @@ describe('FAMtastic proof job contract', () => {
     expect(generationCount).toBe(1);
     expect(callbackBodies).toHaveLength(1);
     expect(callbackBodies[0].variants.map((variant) => variant.direction_id)).toEqual(['a', 'b', 'c']);
+    expect(callbackBodies[0].variants.every((variant) => variant.thumbnail_media_type === 'image/jpeg')).toBe(true);
+    expect(callbackBodies[0].variants.every((variant) => variant.thumbnail_base64 === 'dGh1bWI=')).toBe(true);
   });
 });

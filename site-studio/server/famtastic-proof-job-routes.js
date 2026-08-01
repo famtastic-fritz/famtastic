@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const cheerio = require('cheerio');
 
 const DIRECTIONS = [
   { direction_id: 'a', direction_name: 'Bold and Modern', layout_variant: 'split_screen', font_pairing: 'modern-geometric', color_mood: 'bold', density: 'spacious', shape: 'sharp' },
@@ -95,6 +96,37 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function proofMediaFallback(tag, before, src, after, designDna) {
+  const attrs = `${before} ${after}`;
+  const status = /data-slot-status=["']([^"']+)["']/i.exec(attrs)?.[1]?.toLowerCase();
+  const transparentPixel = /^data:image\/gif;base64,R0lGODlhAQABA/i.test(src);
+  if (status !== 'empty' && !transparentPixel) return null;
+  const role = (/data-slot-role=["']([^"']+)["']/i.exec(attrs)?.[1] || 'feature').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const business = designDna?.spec_snapshot?.site_name || 'Business';
+  return `<span class="proof-media-fallback proof-media-fallback--${role}" role="img" aria-label="Decorative visual for ${escapeHtml(business)}"></span>`;
+}
+
+function stripCustomerVisibleScaffolding(html) {
+  const $ = cheerio.load(String(html || ''), { decodeEntities: false });
+  const forbidden = /\b(?:transparent placeholder|reserved (?:visual|image) slot|proof mode|proof-safe|image placeholder|hero photo slot|content (?:is|still) missing)\b/i;
+  $('p, span, small, strong, figcaption, div, [class*="placeholder-caption"], [class*="visual-note"]').each((_, element) => {
+    const candidate = $(element);
+    if (element.tagName === 'div' && candidate.children().length > 0) return;
+    if (forbidden.test(candidate.text().replace(/\s+/g, ' ').trim())) candidate.remove();
+  });
+  $('article').each((_, element) => {
+    if (/what the proof leaves open|next content pass|content (?:is|still) missing/i.test($(element).text())) $(element).remove();
+  });
+  return $.html()
+    .replace(/why this proof feels believable/gi, 'Why customers can feel confident')
+    .replace(/bakery proof snapshot/gi, 'Bakery at a Glance')
+    .replace(/throughout the proof/gi, 'throughout the page')
+    .replace(/\bthis proof\b/gi, 'this design')
+    .replace(/\bthe proof\b/gi, 'the design')
+    .replace(/\bclient contract\b/gi, 'business details')
+    .replace(/generic placeholder copy/gi, 'generic copy');
+}
+
 function packageProofHtml(artifactPath, html, designDna = {}) {
   const artifactDir = path.dirname(artifactPath);
   let packaged = String(html || '');
@@ -109,6 +141,8 @@ function packageProofHtml(artifactPath, html, designDna = {}) {
     packaged = packaged.replace(/<head([^>]*)>/i, `<head$1>\n<style data-site-studio-shared>\n${sharedCss}\n</style>`);
   }
   packaged = packaged.replace(/<img\b([^>]*?)src=["']([^"']+)["']([^>]*)>/gi, (tag, before, src, after) => {
+    const fallback = proofMediaFallback(tag, before, src, after, designDna);
+    if (fallback) return fallback;
     if (/^(?:https?:|data:|\/\/)/i.test(src)) return tag;
     const file = path.resolve(artifactDir, src);
     if (file.startsWith(artifactDir + path.sep) && fs.existsSync(file) && fs.statSync(file).size <= 200000) {
@@ -129,8 +163,11 @@ function packageProofHtml(artifactPath, html, designDna = {}) {
 .fam-hero-layer{position:absolute;inset:0;pointer-events:none}
 .fam-hero-layer--bg{z-index:0}.fam-hero-layer--character{z-index:3}.fam-hero-layer--fx{z-index:4}
 .fam-hero-layer--content{z-index:6;position:relative;inset:auto;pointer-events:auto}
+.proof-media-fallback{display:block;width:100%;min-height:12rem;aspect-ratio:4/3;border-radius:inherit;overflow:hidden;background:radial-gradient(circle at 22% 18%,rgba(255,255,255,.7) 0 5%,transparent 6%),radial-gradient(circle at 74% 30%,rgba(255,255,255,.32),transparent 28%),linear-gradient(135deg,var(--color-secondary,#d9a15f),var(--color-primary,#70401f) 52%,var(--color-accent,#f3c56f));box-shadow:inset 0 0 0 1px rgba(255,255,255,.24)}
+.proof-media-fallback--hero,.proof-media-fallback--character{aspect-ratio:16/10;min-height:18rem;background:radial-gradient(ellipse at 70% 18%,rgba(255,244,210,.72),transparent 34%),linear-gradient(145deg,var(--color-primary,#70401f),var(--color-accent,#e7a33f))}
+.proof-media-fallback--service,.proof-media-fallback--product{background:repeating-linear-gradient(135deg,rgba(255,255,255,.14) 0 12px,transparent 12px 24px),linear-gradient(145deg,var(--color-secondary,#d9a15f),var(--color-primary,#70401f))}
 </style></head>`);
-  return sanitizeProofHtml(packaged);
+  return sanitizeProofHtml(stripCustomerVisibleScaffolding(packaged));
 }
 
 function atomicWriteJson(file, value) {
@@ -140,7 +177,7 @@ function atomicWriteJson(file, value) {
   fs.renameSync(tmp, file);
 }
 
-function createProofJobService({ generateCampaign, jobsDir, outputRoot, callbackSecret, fetchImpl = fetch }) {
+function createProofJobService({ generateCampaign, renderThumbnail = null, jobsDir, outputRoot, callbackSecret, fetchImpl = fetch }) {
   const inFlight = new Set();
   const jobFile = (jobId) => path.join(jobsDir, `${jobId}.json`);
   const findByKey = (key) => {
@@ -205,10 +242,16 @@ function createProofJobService({ generateCampaign, jobsDir, outputRoot, callback
         }
         generated = result.variants;
       }
-      const variants = generated.map((variant) => ({
-        direction_id: variant.direction_id,
-        html: packageProofHtml(variant.artifact_path, fs.readFileSync(variant.artifact_path, 'utf8'), variant.design_dna || {}),
-        design_dna: variant.design_dna || {},
+      const variants = await Promise.all(generated.map(async (variant) => {
+        const html = packageProofHtml(variant.artifact_path, fs.readFileSync(variant.artifact_path, 'utf8'), variant.design_dna || {});
+        const thumbnail = renderThumbnail ? await renderThumbnail(html, variant) : null;
+        return {
+          direction_id: variant.direction_id,
+          html,
+          thumbnail_base64: thumbnail?.data || null,
+          thumbnail_media_type: thumbnail?.media_type || null,
+          design_dna: variant.design_dna || {},
+        };
       }));
       job.generated_variants = generated.map((variant) => ({
         direction_id: variant.direction_id,
@@ -276,8 +319,8 @@ function createProofJobService({ generateCampaign, jobsDir, outputRoot, callback
   return { accept, run, findByKey, resumePending };
 }
 
-function registerFamtasticProofJobRoute({ app, generateCampaign, jobsDir, outputRoot, dispatchSecret, callbackSecret, fetchImpl }) {
-  const service = createProofJobService({ generateCampaign, jobsDir, outputRoot, callbackSecret, fetchImpl });
+function registerFamtasticProofJobRoute({ app, generateCampaign, renderThumbnail, jobsDir, outputRoot, dispatchSecret, callbackSecret, fetchImpl }) {
+  const service = createProofJobService({ generateCampaign, renderThumbnail, jobsDir, outputRoot, callbackSecret, fetchImpl });
   app.post('/api/integrations/famtastic/proof-jobs', (req, res) => {
     if (!dispatchSecret || !callbackSecret) return res.status(503).json({ error: 'proof_integration_not_configured' });
     if (!verifySignature(req.rawBody, req.get('X-FAMtastic-Signature'), dispatchSecret)) {
@@ -304,6 +347,7 @@ module.exports = {
   validateRequest,
   mapRequestToCampaign,
   sanitizeProofHtml,
+  stripCustomerVisibleScaffolding,
   packageProofHtml,
   createProofJobService,
   registerFamtasticProofJobRoute,

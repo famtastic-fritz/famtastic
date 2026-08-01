@@ -7178,3 +7178,6 @@ Known gaps: no real paid/auxiliary generative provider is wired yet; token/cost 
 ## 2026-08-01 — Proof integration must cross a portable artifact boundary
 
 A successful generator response is not proof that a customer-ready preview exists. The first real Site Studio campaign exposed three boundary failures: FAMtastic Designs used `/web/proofs` even though Drupal's `web` directory is the document root; callback active-content detection accidentally matched the word `content` in valid meta tags; and generated pages depended on shared hero CSS whose cascade position changed when the file was inlined. The durable rule is now: generate through Shay, package each direction as script-free standalone HTML, place shared CSS before page CSS, embed minimal layered-hero primitives, serve it from `/proofs`, and pass browser acceptance before outreach.
+## 2026-08-01 — Customer proofs need screenshots after final packaging
+
+A thumbnail captured before portability and media cleanup can misrepresent what the prospect opens. The correct order is: generate, sanitize, inline CSS, replace empty media slots, remove internal scaffolding copy, render the final packaged HTML, then capture the card thumbnail. The screenshot and HTML must cross the same signed callback boundary and live in the same campaign/direction directory.

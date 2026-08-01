@@ -1018,6 +1018,7 @@ const { registerFamtasticProofJobRoute } = require('./server/famtastic-proof-job
 registerFamtasticProofJobRoute({
   app,
   generateCampaign: generateProofCampaign,
+  renderThumbnail: renderProofThumbnailHtml,
   jobsDir: path.resolve(process.env.FAMTASTIC_PROOF_JOBS_DIR || path.join(os.homedir(), '.config', 'famtastic', 'proof-jobs')),
   outputRoot: path.resolve(process.env.FAMTASTIC_PROOF_OUTPUT_ROOT || path.join(os.homedir(), '.config', 'famtastic', 'proof-output')),
   dispatchSecret: process.env.FAMTASTIC_PROOF_DISPATCH_SECRET || '',
@@ -4337,6 +4338,8 @@ CONTENT REQUIREMENTS:
 - Every image must be a transparent placeholder with data-slot-id, data-slot-status="empty", and data-slot-role.
 - Keep the result self-contained and static.
 - Put every required presentation rule in the page's own CSS. Do not use Tailwind utility classes or require scripts/CDNs for styling.
+- Empty media slots are an internal machine contract only. Never show the visitor words such as placeholder, reserved visual, proof mode, proof-safe, image slot, or instructions about content still being missing.
+- Write the page as the finished design concept a prospect evaluates. Do not explain generation constraints, missing testimonials, or implementation notes in customer-visible copy.
 - Invalid generic copy: "A local business ready to grow online", "Everything [business] needs", "Web Presence", "Brand Identity", "Growth Campaigns".
 
 STYLE REQUIREMENTS:
@@ -8154,6 +8157,20 @@ async function captureScreenshotForShay(rawUrl, opts = {}) {
     await page.waitForTimeout(300);
     const buf = await page.screenshot({ type: 'png', fullPage });
     return { media_type: 'image/png', data: buf.toString('base64'), url };
+  } finally {
+    try { await ctx.close(); } catch {}
+  }
+}
+
+async function renderProofThumbnailHtml(html) {
+  const browser = await _getShayPlaywrightBrowser();
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  try {
+    await page.setContent(String(html || ''), { waitUntil: 'load', timeout: SHAY_VISION_LIMITS.screenshotTimeoutMs });
+    await page.waitForTimeout(250);
+    const data = await page.screenshot({ type: 'jpeg', quality: 78, fullPage: false });
+    return { media_type: 'image/jpeg', data: data.toString('base64') };
   } finally {
     try { await ctx.close(); } catch {}
   }
