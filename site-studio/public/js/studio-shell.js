@@ -743,7 +743,13 @@
   function loadPageFields(page, force) {
     if (!page) return Promise.resolve([]);
     if (!force && fieldCache[page]) return Promise.resolve(fieldCache[page]);
-    return fetch('/api/content-fields/' + encodeURIComponent(page))
+    // Explicit site authority: the server 400s (site_tag_required) without it.
+    const tag = (window.config && window.config.tag) || null;
+    if (!tag) {
+      fieldCache[page] = fieldCache[page] || [];
+      return Promise.resolve(fieldCache[page]);
+    }
+    return fetch('/api/content-fields/' + encodeURIComponent(page) + '?siteTag=' + encodeURIComponent(tag))
       .then(r => r.json())
       .then(data => {
         fieldCache[page] = Array.isArray(data.fields) ? data.fields : [];
@@ -1124,6 +1130,15 @@
   }
 
   function saveFieldValue(ctx, value, statusEl) {
+    // Explicit site authority: the server 400s (site_tag_required) without it.
+    const tag = (window.config && window.config.tag) || null;
+    if (!tag) {
+      if (statusEl) {
+        statusEl.textContent = 'Select a site first — edits require an active site.';
+        statusEl.className = 'inspector-status error';
+      }
+      return;
+    }
     if (statusEl) {
       statusEl.textContent = 'Saving…';
       statusEl.className = 'inspector-status info';
@@ -1131,7 +1146,7 @@
     fetch('/api/content-field', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: ctx.page, field_id: ctx.field_id, new_value: value }),
+      body: JSON.stringify({ page: ctx.page, field_id: ctx.field_id, new_value: value, siteTag: tag }),
     }).then(r => r.json()).then(data => {
       if (data.error) throw new Error(data.error);
       fieldCache[ctx.page] = (fieldCache[ctx.page] || []).map(field =>

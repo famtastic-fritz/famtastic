@@ -54,7 +54,10 @@
   };
 
   window.refreshVerification = function refreshVerification() {
-    fetch('/api/verify')
+    // Explicit site authority: /api/verify 400s (site_tag_required) without it.
+    var tag = (window.config && window.config.tag) || null;
+    if (!tag) return;
+    fetch('/api/verify?siteTag=' + encodeURIComponent(tag))
       .then(function(r) { return r.json(); })
       .then(function(data) { window.updateVerifyIndicator(data); })
       .catch(function() {});

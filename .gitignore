@@ -115,3 +115,15 @@ scripts/Screenshot*
 
 # Autopilot runtime ledgers mirrored into the data-center
 data-center/ledgers/autopilot-*.jsonl
+
+# Site Studio runtime-vnext generated state — never commit
+**/.tmp-runtime-vnext*.db*
+**/.tmp-runtime-vnext*.db.blobs/
+**/*.db.v*.bak
+site-studio/sites/*/.project.json
+site-studio/sites/*/runs/
+site-studio/sites/*/dist-vnext/
+.brain-context-*
+
+# Obsolete CSS backup artifacts — not served, not referenced
+*.css.bak

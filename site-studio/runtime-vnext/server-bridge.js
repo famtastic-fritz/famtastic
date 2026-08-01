@@ -51,7 +51,12 @@ async function runSiteBuild(buildRequest, { eventBus = null } = {}) {
   const runner = new RecipeRunner({ registry, eventBus });
 
   const run_id = makeRunId();
-  const hub_root = path.join(__dirname, '..');
+  // STUDIO_VNEXT_HUB_ROOT lets a test relocate the runtime project/workspace
+  // tree (.project.json, runs/) into a temp dir that symlinks runtime-vnext
+  // back to this dir, so a booted server writes nothing into the repo.
+  const hub_root = process.env.STUDIO_VNEXT_HUB_ROOT
+    ? path.resolve(process.env.STUDIO_VNEXT_HUB_ROOT)
+    : path.join(__dirname, '..');
   const sites_root = path.join(hub_root, 'sites');
   const site_tag = buildRequest.site_tag || 'site';
   const site_dir = path.join(sites_root, site_tag);

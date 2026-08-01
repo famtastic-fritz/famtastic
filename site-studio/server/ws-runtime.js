@@ -25,11 +25,29 @@ function broadcastStatus(wss, content) {
   return broadcastJson(wss, { type: 'status', content });
 }
 
-function attachTerminalUpgradeHandler({ server, wss, terminals }) {
-  server.on('upgrade', (request, socket, head) => {
+// Operator V1: both upgrades authenticate DURING the upgrade, before any socket
+// is handed to WebSocketServer.handleUpgrade. A failed upgrade is destroyed.
+// The handler is returned so tests can bind the SHIPPING function to a
+// throwaway http.Server and drive real WebSocket clients through it.
+// `authorizeUpgrade(request, socket, opts)` is provided by server.js (the
+// studioAuth gate); `isLoopbackRequest` / `terminalEnabled` come from
+// lib/security and keep the PTY socket under the same containment as the
+// HTTP terminal routes.
+function attachTerminalUpgradeHandler({ server, wss, terminals, authorizeUpgrade, isLoopbackRequest, terminalEnabled }) {
+  function handleStudioUpgrade(request, socket, head) {
     const url = new URL(request.url, 'http://localhost');
     const match = url.pathname.match(/^\/terminal\/(\d+)$/);
     if (match) {
+      if (typeof isLoopbackRequest === 'function' && typeof terminalEnabled === 'function'
+          && (!isLoopbackRequest(request) || !terminalEnabled())) {
+        socket.destroy();
+        return;
+      }
+      // The PTY is an interactive shell: it needs the privileged scope, not just
+      // a session. Checked BEFORE the terminal lookup so an unauthenticated
+      // caller cannot probe which termIds exist.
+      if (typeof authorizeUpgrade === 'function'
+          && !authorizeUpgrade(request, socket, { requirePrivilegedScope: true })) return;
       const termId = match[1];
       const term = terminals.get(termId);
       if (!term) {
@@ -58,10 +76,14 @@ function attachTerminalUpgradeHandler({ server, wss, terminals }) {
       return;
     }
 
+    // Let the main wss handle non-terminal upgrades
+    if (typeof authorizeUpgrade === 'function' && !authorizeUpgrade(request, socket)) return;
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
     });
-  });
+  }
+  server.on('upgrade', handleStudioUpgrade);
+  return handleStudioUpgrade;
 }
 
 function setupFileWatcherRuntime({ fs, path, rootDir, wss }) {

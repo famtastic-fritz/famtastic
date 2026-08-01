@@ -157,20 +157,39 @@ class RecipeRunner {
       });
       this._emit('run:committed', { runContext });
 
-      db.updateRunStatus(runContext.run_id, 'published', new Date().toISOString());
-      runContext.status = 'published';
-      runContext.ended_at = new Date().toISOString();
-      appendAuditEvent(runContext.workspace_root, {
-        type: 'run:published',
-        run_id: runContext.run_id,
-      });
-      this._emit('run:published', { runContext });
-
       if (publish) {
+        // The runner owns publication (legacy/main flows): recipe completion
+        // IS publication, so the run is persisted 'published' exactly as it
+        // always has been on these paths.
+        db.updateRunStatus(runContext.run_id, 'published', new Date().toISOString());
+        runContext.status = 'published';
+        runContext.ended_at = new Date().toISOString();
+        appendAuditEvent(runContext.workspace_root, {
+          type: 'run:published',
+          run_id: runContext.run_id,
+        });
+        this._emit('run:published', { runContext });
+
         await this.publish({ runContext, projectContext });
+
+        return { status: 'published', runContext, stageOutputs };
       }
 
-      return { status: 'published', runContext, stageOutputs };
+      // publish:false — publication is EXTERNAL (the caller stages and swaps
+      // the artifact itself). The runner must never persist 'published' for a
+      // publication it did not perform: after a clean recipe execution the
+      // truthful durable status is 'recipe_completed', and the caller owns the
+      // 'publishing' -> 'published'/'publish_failed' transition.
+      db.updateRunStatus(runContext.run_id, 'recipe_completed', new Date().toISOString());
+      runContext.status = 'recipe_completed';
+      runContext.ended_at = new Date().toISOString();
+      appendAuditEvent(runContext.workspace_root, {
+        type: 'run:recipe_completed',
+        run_id: runContext.run_id,
+      });
+      this._emit('run:recipe_completed', { runContext });
+
+      return { status: 'recipe_completed', runContext, stageOutputs };
     } catch (err) {
       runContext.status = 'failed';
       runContext.ended_at = new Date().toISOString();

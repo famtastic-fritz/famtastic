@@ -2179,8 +2179,15 @@
     } else if (mode === 'review') {
       hdr.textContent = 'Review';
       area.appendChild(hdr);
-      // Load verification score
-      fetch('/api/verify').then(function (r) { return r.json(); }).then(function (data) {
+      // Load verification score (explicit site tag required — 400 without it).
+      var reviewTag = (window.config && window.config.tag) || null;
+      if (!reviewTag) {
+        var noTagHint = document.createElement('div');
+        noTagHint.style.cssText = 'padding:8px 6px;font-size:11px;color:var(--fam-text-2);line-height:1.5;';
+        noTagHint.textContent = 'Select a site to see its verification score.';
+        area.appendChild(noTagHint);
+      } else
+      fetch('/api/verify?siteTag=' + encodeURIComponent(reviewTag)).then(function (r) { return r.json(); }).then(function (data) {
         var checks = data.checks || {};
         var vals = Object.values(checks);
         var passing = vals.filter(function (v) { return v === true || (v && v.passed); }).length;

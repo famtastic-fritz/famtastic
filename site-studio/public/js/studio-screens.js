@@ -4141,7 +4141,14 @@
   }
 
   function loadPreflightChecks(container) {
-    fetch('/api/verify').then(function (r) { return r.json(); }).then(function (data) {
+    // Explicit site authority: /api/verify 400s (site_tag_required) without it.
+    var tag = (window.config && window.config.tag) || null;
+    if (!tag) {
+      clearEl(container);
+      container.appendChild(mkEl('div', { style: 'font-size:11px;color:var(--fam-text-3);', text: 'Select a site to run preflight checks.' }));
+      return;
+    }
+    fetch('/api/verify?siteTag=' + encodeURIComponent(tag)).then(function (r) { return r.json(); }).then(function (data) {
       clearEl(container);
       var checks = (data && data.checks) || [];
       if (!checks.length) {

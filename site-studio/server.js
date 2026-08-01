@@ -5,6 +5,7 @@ const { WebSocketServer } = require('ws');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cheerio = require('cheerio');
@@ -24,6 +25,11 @@ const { createLedger, addFulfillmentItem, finalizeLedger, readLedger, FULFILLMEN
 const suggestionLogger = require('./lib/suggestion-logger');
 const brandTracker = require('./lib/brand-tracker');
 const { buildCapabilityManifest, loadManifest, checkNetlify } = require('./lib/capability-manifest');
+// Operator V1 — durable deployment jobs + the deploy subprocess runner
+// (ported from feature/site-studio-runtime-vnext-closeout; see those modules
+// for the immutable-target contract).
+const { createDeployRunner } = require('./lib/deploy-runner');
+const { reconcileInterruptedDeployments } = require('./lib/deploy-jobs');
 const costMonitor = require('./lib/cost-monitor');
 const Anthropic = require('@anthropic-ai/sdk');
 const { logAPICall: logSDKCall } = require('./lib/api-telemetry');
@@ -44,6 +50,15 @@ const { validateSpec: validateSpecSchema, normalizeRequiredFields } = require('.
 const { getLogoSkeletonBlock, getLogoNoteBlock, shouldInjectFamtasticLogoMode } = require('./lib/tier-gates');
 const { buildSiteQualityFlowContext } = require('../lib/famtastic/site-quality-flow');
 const logger = require('./lib/logger');
+// Operator V1 — containment + request-context primitives (ported from
+// feature/site-studio-runtime-vnext-closeout, Phase A).
+const {
+  requireLoopback,
+  isLoopbackRequest,
+  isSafeTag,
+  terminalEnabled,
+} = require('./lib/security');
+const { requestContext } = require('./lib/request-context');
 
 // --- Config ---
 const PORT = parseInt(process.env.STUDIO_PORT || '3334', 10);
@@ -64,7 +79,12 @@ let TAG = process.env.SITE_TAG || readLastSite() || 'site-demo';
 const RECENT_CONVO_COUNT = 15; // Recent conversation turns to include in prompt context
 const serverStartedAt = new Date().toISOString();
 const HUB_ROOT = path.resolve(__dirname, '..');
-const SITES_ROOT = path.join(HUB_ROOT, 'sites');
+// STUDIO_SITES_ROOT exists so tests can boot the real server against a fully
+// temporary sites tree (same pattern as STUDIO_TOKEN_PATH / RUNTIME_VNEXT_DB_PATH)
+// instead of writing into the operator's canonical hub sites root.
+const SITES_ROOT = process.env.STUDIO_SITES_ROOT
+  ? path.resolve(process.env.STUDIO_SITES_ROOT)
+  : path.join(HUB_ROOT, 'sites');
 
 // Cache hub repo info at startup (doesn't change at runtime)
 let _hubRepoCache = null;
@@ -78,6 +98,10 @@ try {
 // Derived paths — recomputed on site switch
 function SITE_DIR() { return path.join(SITES_ROOT, TAG); }
 function DIST_DIR() { return path.join(SITE_DIR(), 'dist'); }
+// Operator V1 — explicit-tag path helpers. The V1 artifact tree is
+// sites/<tag>/dist-vnext; these never silently fall back to dist.
+function siteDirFor(siteTag) { return path.join(SITES_ROOT, siteTag); }
+function DIST_VNEXT_DIR(siteTag) { return path.join(siteTag ? siteDirFor(siteTag) : SITE_DIR(), 'dist-vnext'); }
 function CONVO_FILE() { return path.join(SITE_DIR(), 'conversation.jsonl'); }
 function SPEC_FILE() { return path.join(SITE_DIR(), 'spec.json'); }
 function STUDIO_FILE() { return path.join(SITE_DIR(), '.studio.json'); }
@@ -162,6 +186,20 @@ const {
   normalizeTierAndMode,
   normalizeRequiredFields,
 });
+
+// Operator V1 — tag-scoped spec access. The V1 routes resolve their site
+// explicitly (req.ctx.siteTag) and must read/write THAT site's spec, never the
+// ambient one. Writes go through writeSpecForSite, which is atomic
+// (temp file + rename). Zero-tag calls keep the legacy ambient behavior so the
+// route modules can share one pair of functions.
+function readSpecForTag(siteTag) {
+  return siteTag ? readSpecForSite(siteDirFor(siteTag)) : readSpec();
+}
+function writeSpecForTag(spec, options = {}) {
+  const tag = options.siteTag;
+  if (!tag) return writeSpec(spec, options);
+  return writeSpecForSite(siteDirFor(tag), spec);
+}
 
 // Initialize tool handlers with server context
 // TAG and HUB_ROOT are defined above; getSiteDir returns the mutable current SITE_DIR()
@@ -928,10 +966,10 @@ function startSession() {
   return studio;
 }
 
-// Helper: list HTML pages in dist
-function listPages() {
-  if (!fs.existsSync(DIST_DIR())) return [];
-  return fs.readdirSync(DIST_DIR())
+// Helper: list HTML pages in an arbitrary dist directory (index.html first)
+function listPagesInDir(distDir) {
+  if (!fs.existsSync(distDir)) return [];
+  return fs.readdirSync(distDir)
     .filter(f => f.endsWith('.html') && !f.startsWith('_'))
     .sort((a, b) => {
       if (a === 'index.html') return -1;
@@ -940,9 +978,26 @@ function listPages() {
     });
 }
 
+// Helper: list HTML pages in dist
+function listPages() {
+  return listPagesInDir(DIST_DIR());
+}
+
 // --- Express app ---
 const app = express();
-app.use(express.json());
+app.use(express.json({
+  verify(req, _res, buffer) {
+    // Signed integrations must verify the exact bytes sent by the caller.
+    req.rawBody = Buffer.from(buffer);
+  },
+}));
+// Operator V1 — resolve { siteTag, runId, requestId } onto req.ctx.
+// Mounted after express.json() so a body-carried siteTag is visible, and before
+// every router so req.ctx exists everywhere. A malformed tag in the body, query
+// or x-site-tag header is rejected here with 400, and so is a traversal-shaped
+// PATH segment (scanned on the raw URL, because req.params is still {} at
+// app.use time).
+app.use(requestContext());
 app.use(logger.middleware());
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
@@ -955,6 +1010,252 @@ app.use(express.static(path.join(__dirname, 'public'), {
     res.set('Cache-Control', 'no-cache');
   },
 }));
+
+// Public machine-to-machine boundary for FAMtastic Designs. This is mounted
+// before loopback containment because production dispatch may originate on a
+// different host; its exact raw body is authenticated with a dedicated HMAC.
+const { registerFamtasticProofJobRoute } = require('./server/famtastic-proof-job-routes');
+registerFamtasticProofJobRoute({
+  app,
+  generateCampaign: generateProofCampaign,
+  jobsDir: path.resolve(process.env.FAMTASTIC_PROOF_JOBS_DIR || path.join(os.homedir(), '.config', 'famtastic', 'proof-jobs')),
+  outputRoot: path.resolve(process.env.FAMTASTIC_PROOF_OUTPUT_ROOT || path.join(os.homedir(), '.config', 'famtastic', 'proof-output')),
+  dispatchSecret: process.env.FAMTASTIC_PROOF_DISPATCH_SECRET || '',
+  callbackSecret: process.env.FAMTASTIC_PROOF_CALLBACK_SECRET || '',
+});
+
+// Containment: no /api route is reachable from off-host. The preview server on
+// PREVIEW_PORT is unaffected — it serves only built static output and is the
+// surface you actually want on the LAN.
+app.use('/api', requireLoopback);
+
+// ---------------------------------------------------------------------------
+// Operator V1 — AUTHENTICATION WIRING
+// ---------------------------------------------------------------------------
+// lib/auth.js is the credential check. This block is the only place it is
+// mounted. requireLoopback above STAYS as defense in depth: containment and
+// authentication answer different questions ("can a LAN host reach this?" vs
+// "is this caller the operator?").
+//
+// ENFORCEMENT IS ON BY DEFAULT. STUDIO_REQUIRE_AUTH=0 is the explicit opt-out
+// (logged loudly at boot); any other value — including unset — enforces.
+// The frontend in public/ carries credentials via the studio-api-client seam
+// (bootstrap + CSRF header), so the Studio UI works under enforcement.
+// The flag is read PER REQUEST (not captured at module load) so the
+// state is observable and testable without a restart.
+//
+// When enforcement is off, credentials are still RESOLVED (req.auth is set when
+// valid credentials are present) but never REQUIRED. Boot logs say loudly which
+// state the process is in — see the banner in the listen() block.
+const { createAuth, SESSION_COOKIE, parseCookies: parseAuthCookies } = require('./lib/auth');
+
+// STUDIO_TOKEN_PATH exists so tests never touch the operator's real
+// ~/.config/famtastic/studio-token. Production leaves it unset.
+const studioAuth = createAuth(
+  process.env.STUDIO_TOKEN_PATH ? { tokenPath: process.env.STUDIO_TOKEN_PATH } : {},
+);
+
+function authEnforced() {
+  // Enforced by default. Only the explicit string '0' opts out; anything else
+  // (unset, '1', garbage) enforces. Fail closed, not fail open.
+  return process.env.STUDIO_REQUIRE_AUTH !== '0';
+}
+
+/**
+ * Wrap an auth middleware so it only REJECTS when enforcement is on. With the
+ * flag off it still resolves a principal onto req.auth when credentials happen
+ * to be present, then calls next() unconditionally.
+ */
+function enforceAuth(middleware) {
+  return function authEnforcementGate(req, res, next) {
+    if (authEnforced()) return middleware(req, res, next);
+    if (!req.auth) {
+      try {
+        const resolved = studioAuth.authenticateHeaders(req.headers || {});
+        if (resolved.ok) req.auth = resolved.principal;
+      } catch { /* advisory only when unenforced */ }
+    }
+    return next();
+  };
+}
+
+/**
+ * The dangerous surface: anything that executes code, rewrites operator
+ * settings, or changes site lifecycle. Paths are relative to the /api mount.
+ * A session reaches these only after re-presenting the root token at
+ * /api/auth/elevate; a Bearer caller is privileged by construction.
+ */
+const PRIVILEGED_API_ROUTES = [
+  { method: 'POST',   pattern: /^\/bridge\/exec\/?$/ },          // shell exec
+  { method: 'POST',   pattern: /^\/codex\/exec\/?$/ },            // agent w/ fs write
+  { method: 'PUT',    pattern: /^\/settings\/?$/ },               // settings write
+  { method: 'PUT',    pattern: /^\/site-settings\/?$/ },          // settings write
+  { method: 'DELETE', pattern: /^\/site-settings\/?$/ },
+  { method: 'POST',   pattern: /^\/sites\/?$/ },                  // lifecycle
+  { method: 'POST',   pattern: /^\/new-site\/?$/ },
+  { method: 'POST',   pattern: /^\/switch-site\/?$/ },
+  { method: 'DELETE', pattern: /^\/projects\/[^/]+\/?$/ },
+  { method: '*',      pattern: /^\/terminal(?:\/.*)?$/ },         // interactive shell
+  // Operator V1 mutations — build / deploy / surgical edit / verify. Status
+  // reads (GET build-vnext/status, GET deploy-status, GET content-fields/*,
+  // GET verify, GET preview-url) are authenticated but NOT elevated.
+  { method: 'POST',   pattern: /^\/site-studio\/build-vnext\/?$/ },
+  { method: 'POST',   pattern: /^\/deploy\/?$/ },
+  { method: 'POST',   pattern: /^\/content-field\/?$/ },
+  { method: 'POST',   pattern: /^\/verify\/?$/ },
+];
+
+/** @param {string} method @param {string} apiPath path WITHOUT the /api prefix */
+function isPrivilegedApiRequest(method, apiPath) {
+  const m = String(method || '').toUpperCase();
+  const p = String(apiPath || '');
+  return PRIVILEGED_API_ROUTES.some(
+    (r) => (r.method === '*' || r.method === m) && r.pattern.test(p),
+  );
+}
+
+// --- Bootstrap / elevate / logout: the allow-list, mounted BEFORE requireAuth.
+// These are the only /api routes that must be reachable without a session, and
+// each one verifies the root token itself.
+function presentedRootToken(req) {
+  const header = req.headers && (req.headers.authorization || req.headers.Authorization);
+  if (typeof header === 'string') {
+    const m = /^Bearer[ ]+(.+)$/.exec(header.trim());
+    if (m) return m[1].trim();
+  }
+  const body = req.body;
+  if (body && typeof body.token === 'string') return body.token;
+  return null;
+}
+
+// Exchange the root token for an HttpOnly session cookie. The response carries
+// the CSRF token (which the client MUST echo on mutations) and never the token.
+app.post('/api/auth/bootstrap', (req, res) => {
+  const result = studioAuth.bootstrapSession(presentedRootToken(req));
+  if (!result) return res.status(401).json({ error: 'Authentication required', code: 'invalid_token' });
+  res.set('Set-Cookie', result.cookie);
+  return res.json({
+    ok: true,
+    csrfToken: result.csrfToken,
+    expiresAt: result.session.expiresAt,
+    enforced: authEnforced(),
+  });
+});
+
+// Re-auth: opens the short privileged window on an existing session.
+app.post('/api/auth/elevate', (req, res) => {
+  const sid = parseAuthCookies(req.headers && req.headers.cookie)[SESSION_COOKIE];
+  const record = studioAuth.elevate(sid, presentedRootToken(req));
+  if (!record) return res.status(401).json({ error: 'Authentication required', code: 'reauth_failed' });
+  return res.json({ ok: true, privilegedUntil: record.privilegedUntil });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const sid = parseAuthCookies(req.headers && req.headers.cookie)[SESSION_COOKIE];
+  const revoked = studioAuth.revokeSession(sid);
+  res.set('Set-Cookie', studioAuth.clearSessionCookie());
+  return res.json({ ok: true, revoked });
+});
+
+// Non-secret state readout so the operator (and the frontend client) can tell
+// whether auth is enforced without guessing. Never exposes the token.
+app.get('/api/auth/status', (req, res) => {
+  const resolved = studioAuth.authenticateHeaders(req.headers || {});
+  // The CSRF token is returned ONLY to a caller that already presented a valid
+  // SESSION cookie — i.e. to a page that is already authenticated as the
+  // operator. This is the recovery path for a client holding a good session but
+  // no usable CSRF token (second tab after a re-bootstrap elsewhere, cleared
+  // site data with a live cookie, partitioned or blocked localStorage, or
+  // opening a page with ?studio_token= while an earlier session cookie is
+  // still present). Without this, every mutation in that tab 403s until a
+  // manual reload.
+  //
+  // Safe to expose here: the session cookie is HttpOnly and same-origin, and a
+  // cross-origin page cannot read this response because no CORS headers are set.
+  // A bearer-authenticated caller gets nothing — bearer callers do not use CSRF.
+  const isSession = resolved.ok && resolved.principal.kind === 'session';
+  return res.json({
+    enforced: authEnforced(),
+    authenticated: resolved.ok,
+    kind: resolved.ok ? resolved.principal.kind : null,
+    scopes: resolved.ok ? resolved.principal.scopes : [],
+    csrfToken: isSession ? (resolved.principal.session || {}).csrfToken || null : null,
+  });
+});
+
+// --- The gate itself. Everything mounted BELOW this line is authenticated.
+app.use('/api', enforceAuth(studioAuth.requireAuth()));
+
+// --- Privileged scope on the dangerous surface.
+const requirePrivilegedApi = enforceAuth(studioAuth.requirePrivileged());
+app.use('/api', (req, res, next) => {
+  if (!isPrivilegedApiRequest(req.method, req.path)) return next();
+  return requirePrivilegedApi(req, res, next);
+});
+
+// ---------------------------------------------------------------------------
+// Operator V1 — runtime-vnext build route + verification routes
+// (ported from feature/site-studio-runtime-vnext-closeout; see those modules
+// for the adaptation notes). All V1 routes require an explicit siteTag and
+// operate on the dist-vnext artifact tree only.
+// ---------------------------------------------------------------------------
+const { registerRuntimeVnextBuildRoute } = require('./server/runtime-vnext-build-route');
+registerRuntimeVnextBuildRoute({
+  app,
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  getDistVnextDir: DIST_VNEXT_DIR,
+  // The recipe's fixtures resolve relative to hubRoot, so hubRoot stays the
+  // site-studio dir. The CANONICAL site tree (spec read/write, dist-vnext
+  // publish) comes from readSpecForTag/writeSpecForTag/DIST_VNEXT_DIR, which
+  // are rooted at server.js's SITES_ROOT — not from projectContext.sites_root.
+  // STUDIO_VNEXT_HUB_ROOT lets a test relocate the runtime project/workspace
+  // tree (.project.json, runs/) into a temp dir that symlinks runtime-vnext
+  // back to this dir, so a booted server writes nothing into the repo.
+  hubRoot: process.env.STUDIO_VNEXT_HUB_ROOT
+    ? path.resolve(process.env.STUDIO_VNEXT_HUB_ROOT)
+    : __dirname,
+  recipePath: path.join(__dirname, 'runtime-vnext', 'recipes', 'deterministic-site-build.yaml'),
+  getPreviewPort: () => PREVIEW_PORT,
+});
+
+const { createVerificationRouter } = require('./server/verification-routes');
+app.use('/api', createVerificationRouter({
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  listPagesInDir,
+  runBuildVerification,
+  getDistVnextDir: DIST_VNEXT_DIR,
+}));
+
+// Content fields API — Operator V1 explicit-tag contract (ported from
+// feature/site-studio-runtime-vnext-closeout). Mounted HERE, before the legacy
+// cross-origin allow-list below, matching the feature's route ordering: V1
+// callers authenticate via lib/auth (session+CSRF or bearer), not the Origin
+// header. Both routes REQUIRE an explicit siteTag (400 site_tag_required
+// otherwise) and operate on the site's spec scoped to that tag. The legacy
+// zero-tag ambient behavior is removed on these routes — lib/auth.js already
+// names them privileged.
+const { createContentFieldRouter } = require('./server/content-field-routes');
+app.use('/api', createContentFieldRouter({
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  getDistVnextDir: DIST_VNEXT_DIR,
+  listPagesInDir,
+  studioEvents,
+  STUDIO_EVENTS,
+}));
+
+/**
+ * WebSocket upgrade gate, used by BOTH the Studio WS and the PTY WS. On failure
+ * lib/auth.js writes a 401/403 status line and DESTROYS the socket — it is
+ * never handed to WebSocketServer.handleUpgrade. Returns true if the upgrade
+ * may proceed.
+ */
+function authorizeUpgrade(request, socket, opts = {}) {
+  if (!authEnforced()) return true;
+  return studioAuth.guardUpgrade(request, socket, opts) !== null;
+}
 
 // Bridge routes — mounted before CSRF so internal Studio tool calls pass through
 app.use('/api/bridge', require('./lib/bridge-routes'));
@@ -995,6 +1296,12 @@ const { broadcastJson, attachTerminalUpgradeHandler, setupFileWatcherRuntime } =
 // CSRF protection — reject cross-origin mutations
 app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+  // Operator V1: a Bearer-authenticated caller is not a browser — CSRF does not
+  // apply to it (the origin allow-list exists to stop cross-site pages riding a
+  // cookie). lib/auth requireAuth has already set req.auth by this point; only
+  // session-cookie callers still need the origin gate. This mirrors the feature
+  // branch, where route ordering lets bearer mutations reach their handlers.
+  if (req.auth && req.auth.kind === 'bearer') return next();
   const origin = req.get('origin') || req.get('referer') || '';
   const allowed = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
   if (!allowed.some(a => origin.startsWith(a))) {
@@ -1025,12 +1332,19 @@ registerDeployRepoRoutes({
   getSpecFile: () => SPEC_FILE(),
   getHubRepoCache: () => _hubRepoCache,
   getTag: () => TAG,
-  isDeployInProgress: () => deployInProgress,
-  readSpec,
-  writeSpec,
+  isDeployInProgress,
+  // Tag-scoped pair: the V1 deploy route reads/writes the EXPLICIT site's
+  // spec; zero-tag calls (deploy-info, site-repo) keep the ambient behavior.
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
   checkNetlify,
   runDeploy,
   createSiteRepo,
+  // Operator V1 deploy contract: explicit-tag artifact check, provider
+  // resolution, and the sites root the status scan walks.
+  getDistVnextDir: DIST_VNEXT_DIR,
+  loadSettings,
+  getSitesRoot: () => SITES_ROOT,
 });
 
 registerStudioStateRoutes({
@@ -3958,7 +4272,7 @@ PROOF ID: ${proofId}
 - Make this proof visually distinct from other directions using the selected layout, palette, typography, density, and shape.
 - Every major section must include data-section-id and data-section-type.
 - Editable headings, body copy, CTA text, phone, and email should include data-field-id and data-field-type.
-- Use static HTML, Tailwind CDN, CSS, and minimal inline JavaScript only when needed for navigation.
+- Use static HTML and self-contained CSS. Do not depend on Tailwind, JavaScript, a CDN, or external assets for layout or presentation.
 - Do not create multiple pages. All navigation should point to sections within index.html.`;
 
   return {
@@ -4022,6 +4336,7 @@ CONTENT REQUIREMENTS:
 - Forms are static proof UI only. Do not rely on Netlify, server actions, or production backend processing.
 - Every image must be a transparent placeholder with data-slot-id, data-slot-status="empty", and data-slot-role.
 - Keep the result self-contained and static.
+- Put every required presentation rule in the page's own CSS. Do not use Tailwind utility classes or require scripts/CDNs for styling.
 - Invalid generic copy: "A local business ready to grow online", "Everything [business] needs", "Web Presence", "Brand Identity", "Growth Campaigns".
 
 STYLE REQUIREMENTS:
@@ -4070,6 +4385,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
     maxTokens: 16384,
     callSite: 'proof-template-build',
     timeoutMs: 300000,
+    provider: process.env.FAMTASTIC_PROOF_PROVIDER || 'shay',
   });
   let templateHtml = stripAiHtml(rawTemplate);
   if (proofSpec.famtastic_mode) {
@@ -4093,6 +4409,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
     maxTokens: 16384,
     callSite: 'proof-page-build',
     timeoutMs: 300000,
+    provider: process.env.FAMTASTIC_PROOF_PROVIDER || 'shay',
   });
   let pageHtml = stripAiHtml(rawPage);
   if (pageHtml.length < 50 || !/<html[\s>]/i.test(pageHtml)) {
@@ -4113,6 +4430,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
       maxTokens: 16384,
       callSite: 'proof-page-build-retry',
       timeoutMs: 300000,
+      provider: process.env.FAMTASTIC_PROOF_PROVIDER || 'shay',
     });
     pageHtml = stripAiHtml(retryRawPage);
     contentCheck = verifyClientBriefContent(pageHtml, proofSpec, {
@@ -6097,101 +6415,6 @@ ${lessons}
 }
 
 // --- Component Library API extracted to server/component-routes.js ---
-
-// Content fields API — used by editable page view (Phase 2)
-app.get('/api/content-fields/:page', (req, res) => {
-  const page = req.params.page;
-  if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
-  const spec = readSpec();
-  const fields = spec.content?.[page]?.fields || [];
-  res.json({ page, fields, total: fields.length });
-});
-
-// Update a single content field — surgical edit endpoint
-app.post('/api/content-field', (req, res) => {
-  const { page, field_id, new_value } = req.body;
-  if (!page || !field_id || new_value === undefined) {
-    return res.status(400).json({ error: 'page, field_id, and new_value required' });
-  }
-
-  const spec = readSpec();
-  const field = spec.content?.[page]?.fields?.find(f => f.field_id === field_id);
-  if (!field) return res.status(404).json({ error: 'Field not found in spec.content' });
-
-  const oldValue = typeof field.value === 'string' ? field.value : (field.value?.text || JSON.stringify(field.value));
-
-  // Surgical HTML replacement
-  const pagePath = path.join(DIST_DIR(), page);
-  if (!fs.existsSync(pagePath)) return res.status(404).json({ error: 'Page HTML not found' });
-
-  let html = fs.readFileSync(pagePath, 'utf8');
-  const $ = cheerio.load(html);
-
-  // Try data-field-id selector first
-  const el = $(`[data-field-id="${field_id}"]`);
-  if (el.length > 0) {
-    el.text(new_value);
-    // Update href for phone/email
-    if (field.type === 'phone' && el.attr('href')?.startsWith('tel:')) {
-      el.attr('href', `tel:+1${new_value.replace(/\D/g, '')}`);
-    } else if (field.type === 'email' && el.attr('href')?.startsWith('mailto:')) {
-      el.attr('href', `mailto:${new_value}`);
-    }
-    fs.writeFileSync(pagePath, $.html());
-  } else if (html.includes(oldValue)) {
-    // Fallback: text match
-    html = html.replace(new RegExp(oldValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), new_value);
-    fs.writeFileSync(pagePath, html);
-  } else {
-    return res.status(404).json({ error: `Value "${oldValue}" not found in HTML` });
-  }
-
-  // Update spec for this page
-  field.value = new_value;
-
-  // Global field propagation — phone/email/address/hours update across all pages
-  const GLOBAL_FIELD_TYPES = ['phone', 'email', 'address', 'hours'];
-  const cascadePages = [];
-  if (GLOBAL_FIELD_TYPES.includes(field.type) || field.scope === 'global') {
-    const allPages = listPages().filter(p => p !== page);
-    for (const otherPage of allPages) {
-      const otherFields = spec.content?.[otherPage]?.fields || [];
-      // Find matching field by type or field_id on other pages
-      const matchField = otherFields.find(f =>
-        f.type === field.type || f.field_id === field_id ||
-        (f.field_id.includes(field.type) && f.type === field.type)
-      );
-      if (!matchField) continue;
-      const otherPath = path.join(DIST_DIR(), otherPage);
-      if (!fs.existsSync(otherPath)) continue;
-      let otherHtml = fs.readFileSync(otherPath, 'utf8');
-      const $2 = cheerio.load(otherHtml);
-      const otherEl = $2(`[data-field-id="${matchField.field_id}"]`);
-      if (otherEl.length > 0) {
-        otherEl.text(new_value);
-        if (field.type === 'phone' && otherEl.attr('href')?.startsWith('tel:')) {
-          otherEl.attr('href', `tel:+1${new_value.replace(/\D/g, '')}`);
-        } else if (field.type === 'email' && otherEl.attr('href')?.startsWith('mailto:')) {
-          otherEl.attr('href', `mailto:${new_value}`);
-        }
-        fs.writeFileSync(otherPath, $2.html());
-        matchField.value = new_value;
-        cascadePages.push(otherPage);
-      }
-    }
-  }
-
-  writeSpec(spec, {
-    source: 'content_field_api',
-    mutationLevel: 'field',
-    mutationTarget: field_id,
-    oldValue,
-    newValue: new_value,
-  });
-
-  studioEvents.emit(STUDIO_EVENTS.EDIT_APPLIED, { tag: TAG, page, field_id, new_value });
-  res.json({ success: true, field_id, old_value: oldValue, new_value, cascade_pages: cascadePages });
-});
 
 // GET /api/brain-status — current API connection status for all three brains + Codex
 app.get('/api/brain-status', (req, res) => {
@@ -15014,13 +15237,13 @@ function runPostProcessing(ws, writtenPages, options = {}) {
 // --- Build Verification System (Phase 1) ---
 // Zero-token, zero-latency file-based verification that runs after every build.
 
-function verifySlotAttributes(pages) {
+function verifySlotAttributes(pages, distDir = DIST_DIR()) {
   const issues = [];
   let totalSlots = 0;
   const transparentPixel = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15073,9 +15296,9 @@ function verifySlotAttributes(pages) {
   return { check: 'slot-attributes', status, issues, slotsChecked: totalSlots };
 }
 
-function verifyCssCoherence() {
+function verifyCssCoherence(distDir = DIST_DIR()) {
   const issues = [];
-  const cssPath = path.join(DIST_DIR(), 'assets', 'styles.css');
+  const cssPath = path.join(distDir, 'assets', 'styles.css');
 
   if (!fs.existsSync(cssPath)) {
     return { check: 'css-coherence', status: 'failed', issues: ['styles.css not found'] };
@@ -15113,7 +15336,7 @@ function verifyCssCoherence() {
   return { check: 'css-coherence', status, issues };
 }
 
-function verifyCrossPageConsistency(pages) {
+function verifyCrossPageConsistency(pages, distDir = DIST_DIR()) {
   const issues = [];
   if (pages.length <= 1) return { check: 'cross-page-consistency', status: 'passed', issues: [] };
 
@@ -15122,7 +15345,7 @@ function verifyCrossPageConsistency(pages) {
   const fontUrls = {};
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15171,11 +15394,11 @@ function verifyCrossPageConsistency(pages) {
   return { check: 'cross-page-consistency', status, issues };
 }
 
-function verifyHeadDependencies(pages) {
+function verifyHeadDependencies(pages, distDir = DIST_DIR()) {
   const issues = [];
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15194,11 +15417,11 @@ function verifyHeadDependencies(pages) {
   return { check: 'head-dependencies', status, issues };
 }
 
-function verifyLogoAndLayout(pages) {
+function verifyLogoAndLayout(pages, distDir = DIST_DIR()) {
   const issues = [];
 
   for (const page of pages) {
-    const filePath = path.join(DIST_DIR(), page);
+    const filePath = path.join(distDir, page);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, 'utf8');
 
@@ -15231,8 +15454,8 @@ function verifyLogoAndLayout(pages) {
   return { check: 'logo-and-layout', status, issues };
 }
 
-function verifyRevenueAndState() {
-  const spec = readSpec();
+function verifyRevenueAndState(siteTag, distDir = DIST_DIR()) {
+  const spec = siteTag ? readSpecForTag(siteTag) : readSpec();
   const issues = [];
   if (spec.state === 'client_approved' && !spec.monthly_rate) {
     issues.push('Site is client_approved but monthly_rate is not set — add a rate before sending payment link');
@@ -15240,9 +15463,8 @@ function verifyRevenueAndState() {
   if (spec.revenue_model === 'rank_and_rent' && !spec.monthly_rate) {
     issues.push('Rank-and-rent site has no monthly_rate set — set it in Settings → Site');
   }
-  const isReunion = /reunion|family.event/.test(TAG) || spec.business_type === 'family_reunion';
+  const isReunion = /reunion|family.event/.test(siteTag || TAG) || spec.business_type === 'family_reunion';
   if (isReunion) {
-    const distDir = DIST_DIR();
     const requiredPages = ['event-details.html', 'gallery.html'];
     for (const p of requiredPages) {
       if (!fs.existsSync(path.join(distDir, p))) {
@@ -15268,14 +15490,14 @@ function verifyRevenueAndState() {
   };
 }
 
-function runBuildVerification(pages) {
+function runBuildVerification(pages, distDir = DIST_DIR(), siteTag) {
   const checks = [
-    verifySlotAttributes(pages),
-    verifyCssCoherence(),
-    verifyCrossPageConsistency(pages),
-    verifyHeadDependencies(pages),
-    verifyLogoAndLayout(pages),
-    verifyRevenueAndState(),
+    verifySlotAttributes(pages, distDir),
+    verifyCssCoherence(distDir),
+    verifyCrossPageConsistency(pages, distDir),
+    verifyHeadDependencies(pages, distDir),
+    verifyLogoAndLayout(pages, distDir),
+    verifyRevenueAndState(siteTag, distDir),
   ];
 
   const overallStatus = checks.some(c => c.status === 'failed') ? 'failed'
@@ -18270,7 +18492,12 @@ wss.on('connection', (ws) => {
           const deployEnv = (lowerDeploy.includes('prod') || lowerDeploy.includes('production') || lowerDeploy.includes('live'))
             ? 'production' : 'staging';
           ws.send(JSON.stringify({ type: 'status', content: `Deploying to ${deployEnv}...` }));
-          runDeploy(ws, deployEnv);
+          // Legacy WS chat deploy: ambient site, captured once here, ships the
+          // LEGACY artifact (dist) — the V1 artifact (dist-vnext) belongs to the
+          // Operator V1 HTTP path only. No deploymentId — the durable job
+          // record is an HTTP-path contract; completion still writes the legacy
+          // spec.environments/deployed_url/deploy_history fields.
+          runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist' });
           break;
         }
 
@@ -18811,157 +19038,48 @@ function runOrchestratorSite(ws, template) {
 
 // --- Run site-deploy ---
 // env: 'staging' | 'production'
-let deployInProgress = false;
-// Parse deploy stderr for known failure patterns and return a user-facing message.
-function parseDeployStderr(stderr) {
-  if (!stderr) return null;
-  const s = stderr.toLowerCase();
-  if (/not\s+(?:logged\s+in|authorized|authenticated)|login\s+required|netlify\s+login/.test(s))
-    return 'Netlify is not logged in. Run "netlify login" in a terminal.';
-  if (/network|enotfound|econnrefused|etimedout|getaddrinfo/.test(s))
-    return 'Network error reaching Netlify. Check your connection and retry.';
-  if (/site\s+id|site_id|no\s+site\s+specified/.test(s))
-    return 'Netlify site ID is missing or invalid. Set NETLIFY_SITE_ID or run "netlify link".';
-  if (/permission\s+denied|EACCES/i.test(stderr))
-    return 'Permission denied running the deploy script. Check file permissions on scripts/site-deploy.';
-  if (/quota|rate\s+limit/.test(s))
-    return 'Netlify rate limit or quota exceeded. Try again later.';
-  return null;
-}
+// Deploy runner — extracted to lib/deploy-runner.js so completion persistence
+// is testable without booting the server (ported from
+// feature/site-studio-runtime-vnext-closeout). The in-progress guard keys on
+// site+env; site authority, provider and the Netlify site id are captured by
+// the dispatcher and passed in as ctx — completion never re-reads the ambient
+// TAG. The tag-scoped readSpecForTag/writeSpecForTag pair satisfies the
+// runner's readSpec(siteTag)/writeSpec(spec, { siteTag, source }) contract;
+// zero-tag calls keep the legacy ambient behavior.
+const _deployRunner = createDeployRunner({
+  readSpec: readSpecForTag,
+  writeSpec: writeSpecForTag,
+  invalidateSpecCache,
+  checkNetlify,
+  spawn,
+  hubRoot: HUB_ROOT,
+  sitesRoot: SITES_ROOT,
+  // listPages is ambient on main; scope it to the explicit tag when given so
+  // the deploy_history page count belongs to the deployed site.
+  listPages: (siteTag) => (siteTag ? listPagesInDir(path.join(siteDirFor(siteTag), 'dist')) : listPages()),
+  loadSettings,
+  // The legacy appendConvo is ambient (global TAG paths). For an explicit
+  // non-ambient site, append to THAT site's conversation log instead.
+  appendConvo: (entry, siteTag) => {
+    if (!siteTag || siteTag === TAG) return appendConvo(entry);
+    try {
+      const dir = siteDirFor(siteTag);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.appendFileSync(path.join(dir, 'conversation.jsonl'), JSON.stringify({ ...entry, tag: siteTag }) + '\n');
+    } catch {}
+  },
+  studioEvents,
+  STUDIO_EVENTS,
+  syncSiteRepo,
+  getTag: () => TAG,
+});
 
-async function runDeploy(ws, env) {
-  if (deployInProgress) {
-    try { ws.send(JSON.stringify({ type: 'status', content: 'Deploy already in progress.' })); } catch {}
-    return;
-  }
-  env = env || 'staging';
-  const envLabel = env.charAt(0).toUpperCase() + env.slice(1);
-  console.log(`[deploy] starting env=${env} tag=${TAG}`);
-
-  // Layer 2 — Preflight BEFORE setting deployInProgress flag.
-  // If the preflight fails, the flag stays false and the user can retry.
-  let netlify;
-  try {
-    netlify = await checkNetlify();
-  } catch (probeErr) {
-    netlify = { ok: false, reason: 'other', details: probeErr.message };
-  }
-  if (!netlify || !netlify.ok) {
-    const detail = (netlify && netlify.details) || 'Netlify is not configured.';
-    console.log(`[deploy] preflight failed reason=${(netlify && netlify.reason) || 'other'} details=${detail}`);
-    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed: ${detail}` })); } catch {}
-    appendConvo({ role: 'assistant', content: `${envLabel} deploy preflight failed: ${detail}`, at: new Date().toISOString() });
-    return;
-  }
-
-  deployInProgress = true;
-  const args = [path.join(HUB_ROOT, 'scripts', 'site-deploy'), TAG, '--prod', '--env', env];
-  let child;
-  try {
-    child = spawn(args[0], args.slice(1), {
-      env: process.env,
-      cwd: HUB_ROOT,
-    });
-  } catch (spawnErr) {
-    // Synchronous spawn failure (rare — usually surfaces via 'error' event)
-    deployInProgress = false;
-    try { ws.send(JSON.stringify({ type: 'error', content: `${envLabel} deploy failed to start: ${spawnErr.message}` })); } catch {}
-    return;
-  }
-
-  let output = '';
-  let stderrBuf = '';
-  let settled = false;
-  const settle = () => {
-    if (settled) return false;
-    settled = true;
-    deployInProgress = false;
-    return true;
-  };
-
-  child.stdout.on('data', (chunk) => {
-    output += chunk.toString();
-    try { ws.send(JSON.stringify({ type: 'status', content: chunk.toString().trim() })); } catch {}
-  });
-
-  child.stderr.on('data', (chunk) => {
-    const text = chunk.toString();
-    stderrBuf += text;
-    const trimmed = text.trim();
-    console.error('[deploy]', trimmed);
-    if (trimmed) try { ws.send(JSON.stringify({ type: 'status', content: trimmed })); } catch {}
-  });
-
-  // Layer 3 — Spawn error handler (executable not found, permission denied, etc.)
-  child.on('error', (err) => {
-    if (!settle()) return;
-    const msg = err && err.code === 'ENOENT'
-      ? `${envLabel} deploy failed: deploy script not found at scripts/site-deploy.`
-      : `${envLabel} deploy failed to launch: ${err.message}`;
-    try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
-    appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
-  });
-
-  // Layer 4 — Exit code handling with stderr pattern parsing
-  child.on('close', (code) => {
-    if (!settle()) return;
-    const urlMatch = output.match(/https:\/\/[^\s]+/);
-    if (code === 0 && urlMatch) {
-      invalidateSpecCache();
-      const spec = readSpec();
-      if (!spec.environments) spec.environments = {};
-      spec.environments[env] = {
-        ...(spec.environments[env] || {}),
-        provider: spec.deploy_provider || loadSettings().deploy_target || 'netlify',
-        site_id: spec.environments?.[env]?.site_id || spec.netlify_site_id || null,
-        url: urlMatch[0],
-        deployed_at: new Date().toISOString(),
-        state: 'deployed',
-      };
-      spec.deployed_url = urlMatch[0];
-      spec.deployed_at = spec.environments[env].deployed_at;
-      spec.state = 'deployed';
-
-      spec.deploy_history = spec.deploy_history || [];
-      spec.deploy_history.push({
-        version: spec.deploy_history.length + 1,
-        deployed_at: spec.environments[env].deployed_at,
-        environment: env,
-        url: urlMatch[0],
-        fam_score: spec.fam_score || null,
-        lighthouse: spec.lighthouse_score || null,
-        pages: (listPages() || []).length,
-      });
-      writeSpec(spec);
-
-      studioEvents.emit(STUDIO_EVENTS.DEPLOY_COMPLETED, { tag: TAG, url: urlMatch[0], env });
-      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy complete!\n\nURL: ${urlMatch[0]}` })); } catch {}
-      try { ws.send(JSON.stringify({ type: 'deploy-updated', env, url: urlMatch[0] })); } catch {}
-      appendConvo({ role: 'assistant', content: `${envLabel} deploy succeeded: ${urlMatch[0]}`, at: new Date().toISOString() });
-    } else if (code === 0) {
-      try { ws.send(JSON.stringify({ type: 'assistant', content: `${envLabel} deploy completed. Check the output above for the URL.` })); } catch {}
-      appendConvo({ role: 'assistant', content: `${envLabel} deploy completed (no URL captured)`, at: new Date().toISOString() });
-    } else {
-      // Non-zero exit — parse stderr for a specific reason; fall back to generic message.
-      const specific = parseDeployStderr(stderrBuf);
-      const msg = specific
-        ? `${envLabel} deploy failed: ${specific}`
-        : `${envLabel} deploy failed with exit code ${code}. Check the output above for details.`;
-      try { ws.send(JSON.stringify({ type: 'error', content: msg })); } catch {}
-      appendConvo({ role: 'assistant', content: msg, at: new Date().toISOString() });
-    }
-
-    // Auto-sync site repo after successful deploy
-    if (code === 0) {
-      const freshSpec = readSpec();
-      if (freshSpec.site_repo?.path) {
-        const targetBranch = env === 'production' ? 'main' : 'staging';
-        try { ws.send(JSON.stringify({ type: 'status', content: `Syncing site repo (${targetBranch})...` })); } catch {}
-        syncSiteRepo(ws, freshSpec, targetBranch);
-      }
-    }
-  });
-}
+// Function declarations (hoisted) — the route registration far above this
+// point in the file references runDeploy/isDeployInProgress before the const
+// runner exists, the same way it relied on the old hoisted runDeploy
+// declaration.
+function runDeploy(ws, env, ctx) { return _deployRunner.runDeploy(ws, env, ctx); }
+function isDeployInProgress(siteTag, env) { return _deployRunner.isDeployInProgress(siteTag, env); }
 
 // --- Git Push — push to site repo (dev branch) ---
 function runGitPush(ws, { silent = false } = {}) {
@@ -19614,6 +19732,40 @@ function getAnthropicClient() {
   return _anthropicClient;
 }
 
+function callShayOneshot(prompt, timeoutMs) {
+  return new Promise((resolve) => {
+    const child = spawn(process.env.SHAY_BIN || 'shay', ['-z', prompt, '--ignore-rules'], {
+      cwd: os.tmpdir(),
+      env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      console.error(`[shay-proof] timed out after ${timeoutMs}ms`);
+      finish('');
+    }, timeoutMs);
+    child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    child.on('error', (error) => {
+      console.error('[shay-proof]', error.message);
+      finish('');
+    });
+    child.on('close', (code) => {
+      if (code !== 0) console.error(`[shay-proof] exited ${code}: ${stderr.trim().slice(0, 1000)}`);
+      finish(code === 0 ? stdout.trim() : '');
+    });
+  });
+}
+
 /**
  * Returns true when ANTHROPIC_API_KEY is set and non-empty.
  * When false, all SDK call sites fall back to spawnClaude() subprocess.
@@ -19638,6 +19790,11 @@ function hasAnthropicKey() {
  */
 async function callSDK(prompt, opts = {}) {
   const { maxTokens = 8192, callSite = 'unknown', timeoutMs = 120000, systemPrompt = null } = opts;
+  const provider = opts.provider || 'anthropic';
+  if (provider === 'shay') {
+    const combinedPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+    return callShayOneshot(combinedPrompt, timeoutMs);
+  }
   const model = opts.model || loadSettings().model || 'claude-sonnet-4-6';
 
   // No API key — fall back to spawnClaude() subprocess (Claude Code subscription auth)
@@ -19906,8 +20063,56 @@ const previewServer = http.createServer((req, res) => {
     return;
   }
 
-  const dist = DIST_DIR();
   const urlPath = req.url.split('?')[0];
+
+  // ── Operator V1 preview ──────────────────────────────────────────────────
+  // /vnext/<siteTag>/<page...> serves sites/<siteTag>/dist-vnext — the exact
+  // V1 artifact — for an EXPLICITLY named site. The legacy branch below keeps
+  // serving the ambient operator site's dist for legacy surfaces. A relative
+  // link inside a V1 page (assets/styles.css, about.html) stays under the
+  // /vnext/<tag>/ prefix, so the whole artifact is browsable.
+  // No fallback: a site with no vNext build is a 409, not the legacy dist.
+  if (urlPath.startsWith('/vnext/')) {
+    const rest = decodeURIComponent(urlPath.slice('/vnext/'.length));
+    const slash = rest.indexOf('/');
+    const tag = slash === -1 ? rest : rest.slice(0, slash);
+    const rel = (slash === -1 ? '' : rest.slice(slash + 1)) || 'index.html';
+    if (!isSafeTag(tag)) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('Invalid site tag');
+      return;
+    }
+    const vnextDist = DIST_VNEXT_DIR(tag);
+    if (!fs.existsSync(vnextDist) || !fs.existsSync(path.join(vnextDist, 'index.html'))) {
+      res.writeHead(409, { 'Content-Type': 'text/html' });
+      res.end(`<!DOCTYPE html><html><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8"><div style="text-align:center"><h2>No vNext build</h2><p>Site ${tag} has no dist-vnext artifact. Run a vNext build first.</p></div></body></html>`);
+      return;
+    }
+    let vnextFilePath = path.join(vnextDist, rel);
+    if (!vnextFilePath.startsWith(vnextDist + path.sep)) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('Invalid path');
+      return;
+    }
+    if (!fs.existsSync(vnextFilePath) && fs.existsSync(vnextFilePath + '.html')) vnextFilePath += '.html';
+    if (fs.existsSync(vnextFilePath) && fs.statSync(vnextFilePath).isDirectory()) vnextFilePath = path.join(vnextFilePath, 'index.html');
+    if (!fs.existsSync(vnextFilePath)) {
+      res.writeHead(404);
+      res.end('Not found');
+      return;
+    }
+    const vnextExt = path.extname(vnextFilePath);
+    const vnextMime = MIME_TYPES[vnextExt] || 'application/octet-stream';
+    let vnextContent = fs.readFileSync(vnextFilePath);
+    if (vnextExt === '.html') {
+      vnextContent = vnextContent.toString().replace('</body>', buildPreviewSelectionBridgeScript() + RELOAD_SCRIPT + '</body>');
+    }
+    res.writeHead(200, { 'Content-Type': vnextMime });
+    res.end(vnextContent);
+    return;
+  }
+
+  const dist = DIST_DIR();
   let filePath = path.join(dist, urlPath === '/' ? 'index.html' : urlPath);
   if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) filePath += '.html';
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) filePath = path.join(filePath, 'index.html');
@@ -20009,7 +20214,9 @@ app.delete('/api/terminal/:termId', (req, res) => {
   res.json({ success: true });
 });
 
-attachTerminalUpgradeHandler({ server, wss, terminals });
+const handleStudioUpgrade = attachTerminalUpgradeHandler({
+  server, wss, terminals, authorizeUpgrade, isLoopbackRequest, terminalEnabled,
+});
 
 async function gracefulShutdown() {
   await endSession();
@@ -20101,6 +20308,10 @@ module.exports = {
   fileInspect, browserInspect, inspectSite,
   // Expose internals for integration tests
   app, server, wss, readSpec, writeSpec, invalidateSpecCache,
+  // Operator V1 — dist-vnext artifact authority (see Phase B port)
+  previewServer, listPagesInDir, readSpecForTag, writeSpecForTag, DIST_VNEXT_DIR,
+  // Operator V1 — auth wiring (see Phase A port)
+  handleStudioUpgrade, studioAuth, authEnforced, isPrivilegedApiRequest,
   // Session tracking
   calculateSessionCost, getContextPercentage,
 };
@@ -20238,7 +20449,35 @@ if (require.main === module) {
     throw err;
   });
 
+  // Deployment boot reconciliation: records left dispatched/running by a dead
+  // process would otherwise look eternally running. Mark them interrupted
+  // before the port opens so GET /api/deploy-status never reports a corpse.
+  try {
+    const reconciled = reconcileInterruptedDeployments({ sitesRoot: SITES_ROOT, readSpec: readSpecForTag, writeSpec: writeSpecForTag });
+    if (reconciled.reconciled > 0) {
+      console.log(`[deploy] boot reconcile — marked ${reconciled.reconciled} interrupted deployment(s) failed across ${reconciled.sites.length} site(s)`);
+    }
+  } catch (err) {
+    console.error(`[deploy] boot reconcile FAILED: ${err.message}`);
+  }
+
   server.listen(PORT, () => {
+    // Operator V1 — ensure the root credential exists before the port opens,
+    // and say WHERE it lives. The value itself is never logged, never printed,
+    // and never returned by any route.
+    try {
+      const tokenInfo = studioAuth.ensureToken();
+      console.log(`[auth] root token ${tokenInfo.created ? 'generated' : 'loaded'} (mode 0600) at ${tokenInfo.path}`);
+    } catch (err) {
+      console.error(`[auth] FAILED to establish root token: ${err.message}`);
+    }
+    if (authEnforced()) {
+      console.log('[security] AUTHENTICATION ENFORCED (default) on all /api routes and both WebSocket upgrades. Set STUDIO_REQUIRE_AUTH=0 to opt out.');
+    } else {
+      console.warn('[security] AUTH NOT ENFORCED — STUDIO_REQUIRE_AUTH=0 explicit opt-out.');
+      console.warn('[security] /api and both WebSocket upgrades accept ANY loopback caller, including any page in the operator browser.');
+      console.warn('[security] This is a deliberate, logged opt-out. Unset STUDIO_REQUIRE_AUTH (or set it to 1) to require credentials.');
+    }
     console.log(`[site-studio] Chat UI at http://localhost:${PORT}`);
     console.log(`[site-studio] Site tag: ${TAG}`);
     console.log(`[site-studio] Preview at: http://localhost:${PREVIEW_PORT}`);
