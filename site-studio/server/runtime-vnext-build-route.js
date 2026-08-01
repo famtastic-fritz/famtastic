@@ -44,12 +44,18 @@
  *     server/dist-vnext-publish.js — a STAGED, ATOMIC swap (never the legacy
  *     rm-rf+cp sync, which could leave a half-copied artifact live).
  *     server-bridge's legacy dist behaviour is untouched.
- *   - Publication status is separate from recipe execution status. The runner
- *     persists 'published' when execution succeeds; this route immediately
- *     rewrites the run to 'recipe_completed', transitions it to 'publishing'
- *     for the atomic swap, and persists 'published' / 'publish_failed' only
- *     from the swap's outcome. A run is never reported published merely
- *     because the recipe finished.
+ *   - Publication status is separate from recipe execution status. With
+ *     publish:false the runner never persists 'published': it durably
+ *     persists 'recipe_completed' when execution succeeds. This route then
+ *     transitions the run to 'publishing' for the atomic swap, and persists
+ *     'published' / 'publish_failed' only from the swap's verified outcome.
+ *     A run is never reported published merely because the recipe finished.
+ *   - The swap is a DURABLE publication transaction (server/dist-vnext-publish.js):
+ *     the staged artifact is fingerprinted and journaled BEFORE the swap, and
+ *     the live dist-vnext is verified against that fingerprint before the run
+ *     may become 'published'. Boot-time and lazy recovery resolve any run
+ *     interrupted mid-transaction by comparing the live artifact to the
+ *     journaled fingerprint (idempotent across repeated restarts).
  *   - Concurrency guard is an IN-PROCESS per-site set. The feature's persisted
  *     SQLite build_locks table depended on the feature's migration framework,
  *     which does not exist on main; no lock table is ported.
@@ -69,7 +75,13 @@ const { DeterministicToolRunner } = require('../runtime-vnext/families/determini
 const { siteTagOr400 } = require('../lib/request-context');
 const { isValidPageName } = require('./validators');
 const vnextDb = require('../runtime-vnext/state/db');
-const { publishDistVnextAtomic, reconcileDistVnextDirs } = require('./dist-vnext-publish');
+const {
+  publishDistVnextAtomic,
+  reconcileDistVnextDirs,
+  recoverSitePublications,
+  removePublicationJournal,
+  crashAfterHook,
+} = require('./dist-vnext-publish');
 
 // In-process per-site build guard. A second concurrent build for the SAME site
 // is refused with 409; different sites may build concurrently. This replaces
@@ -89,17 +101,29 @@ const buildsInProgress = new Set();
 function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnextDir, hubRoot, recipePath, getPreviewPort }) {
   // NOTE: server.js already mounts express.json() globally.
 
-  // Boot-time reconciliation. A process that died mid-publication can leave:
-  //   - runs stuck at 'publishing' (their swap never completed) -> publish_failed
+  // Boot-time crash recovery, idempotent across repeated restarts:
+  //   - journaled 'publishing' runs -> resolved by fingerprint identity:
+  //     live artifact matches the journal -> 'published' (swap had landed);
+  //     no match -> restore the run's backup when present, 'publish_failed'
+  //     (see server/dist-vnext-publish.js for the full decision table)
   //   - abandoned .dist-vnext-*-tmp / .dist-vnext-backup-* dirs per site ->
   //     cleaned up, restoring a backup to dist-vnext when its staged
   //     counterpart never landed (see server/dist-vnext-publish.js)
+  //   - 'publishing' runs with NO external_atomic journal (legacy rows, or a
+  //     crash before the journal landed — the swap never started) ->
+  //     publish_failed, the legacy truthful resolution
   try {
-    for (const run of vnextDb.listRunsByStatus('publishing')) {
-      vnextDb.updateRunStatus(run.run_id, 'publish_failed', new Date().toISOString());
-    }
+    const publishingRunIds = vnextDb.listRunsByStatus('publishing').map((run) => run.run_id);
     for (const project of vnextDb.listProjects()) {
-      reconcileDistVnextDirs(path.dirname(getDistVnextDir(project.site_tag)));
+      const siteDir = path.dirname(getDistVnextDir(project.site_tag));
+      recoverSitePublications({ siteDir, db: vnextDb });
+      reconcileDistVnextDirs(siteDir);
+    }
+    for (const runId of publishingRunIds) {
+      const run = vnextDb.getRun(runId);
+      if (run && run.status === 'publishing') {
+        vnextDb.updateRunStatus(runId, 'publish_failed', new Date().toISOString());
+      }
     }
   } catch (err) {
     console.warn(`[build-vnext] boot reconciliation failed: ${err.message}`);
@@ -246,7 +270,7 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
         publish: false,
       });
 
-      if (result.status !== 'published') {
+      if (result.status !== 'recipe_completed') {
         return res.status(500).json({
           success: false,
           error: result.error || 'Build failed',
@@ -255,27 +279,36 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
         });
       }
 
-      // The recipe executed cleanly — but the runner persists 'published' for
-      // recipe-level completion and NOTHING has been published yet. Rewrite
-      // the run to its truthful recipe-level state before publication starts.
-      vnextDb.updateRunStatus(runContext.run_id, 'recipe_completed');
+      // The recipe executed cleanly and the run is durably 'recipe_completed'.
+      // NOTHING has been published yet — publication starts below.
+      // TEST-ONLY crash hook (inert unless STUDIO_VNEXT_CRASH_AFTER=recipe):
+      // a hard crash here leaves recipe_completed + the previous dist-vnext
+      // untouched, and recovery has nothing to resolve (retry-safe).
+      crashAfterHook('recipe');
 
-      // Operator V1 publication: stage outputs into a sibling temp dir, then
-      // atomically swap it into dist-vnext. The previously published artifact
-      // is preserved/restored on any failure, and the run reaches 'published'
-      // only after the swap landed.
+      // Operator V1 publication as a durable transaction: stage outputs into
+      // a sibling temp dir, fingerprint + journal the staged artifact, then
+      // atomically swap it into dist-vnext and verify the live fingerprint.
+      // The previously published artifact is preserved/restored on any
+      // failure, and the run reaches 'published' only after the live artifact
+      // is verified to be the journaled one. The journal is removed only
+      // after the terminal status is durably persisted.
+      const siteDir = path.dirname(publishDir);
       vnextDb.updateRunStatus(runContext.run_id, 'publishing');
       try {
-        // Lazy per-site reconciliation of dirs abandoned by a crashed build.
-        reconcileDistVnextDirs(path.dirname(publishDir));
+        // Lazy per-site recovery of publications abandoned by a crashed build.
+        recoverSitePublications({ siteDir, db: vnextDb });
+        reconcileDistVnextDirs(siteDir);
         publishDistVnextAtomic({
           workspaceRoot: runContext.workspace_root,
           distVnextDir: publishDir,
           runId: runContext.run_id,
           expectedPages: inputPages,
+          siteTag,
         });
       } catch (publishErr) {
         vnextDb.updateRunStatus(runContext.run_id, 'publish_failed', new Date().toISOString());
+        removePublicationJournal(siteDir, runContext.run_id);
         return res.status(500).json({
           success: false,
           error: `Build succeeded but publication failed (${publishErr.message})`,
@@ -284,6 +317,7 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
         });
       }
       vnextDb.updateRunStatus(runContext.run_id, 'published', new Date().toISOString());
+      removePublicationJournal(siteDir, runContext.run_id);
 
       const files = fs.existsSync(publishDir)
         ? fs.readdirSync(publishDir).filter((f) => fs.statSync(path.join(publishDir, f)).isFile())
