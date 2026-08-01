@@ -54,9 +54,15 @@ let siteDir;
 // ---------------------------------------------------------------------------
 
 function stubDb(seed = {}) {
-  const runs = new Map(Object.entries(seed));
+  const runs = new Map(Object.entries(seed).map(([id, row]) => [id, {
+    project_id: 'project-classified',
+    ...row,
+  }]));
   return {
     getRun: (id) => runs.get(id) || null,
+    getProject: (id) => id === 'project-classified'
+      ? { project_id: id, site_tag: SITE_TAG }
+      : (id === 'project-other' ? { project_id: id, site_tag: 'site-other' } : null),
     updateRunStatus: (id, status, endedAt) => {
       const row = runs.get(id);
       if (row) {
@@ -200,6 +206,11 @@ describe('durable mismatch classification (Correction B)', () => {
       'receipt run not published': { receipt: { runId: RUN_NEW, fingerprint: liveFp }, newStatus: 'publish_failed' },
       // receipt run missing from the durable db entirely
       'receipt run missing from db': { receipt: { runId: RUN_NEW, fingerprint: liveFp }, omitNewRun: true },
+      // a real published run from ANOTHER site cannot explain this site's live artifact
+      'receipt run belongs to another site': {
+        receipt: { runId: RUN_NEW, fingerprint: liveFp },
+        newProjectId: 'project-other',
+      },
     };
 
     for (const [label, variant] of Object.entries(variants)) {
@@ -207,7 +218,12 @@ describe('durable mismatch classification (Correction B)', () => {
       const live = liveFingerprint();
       const db = stubDb({
         [RUN_OLD]: { status: 'published' },
-        ...(variant.omitNewRun ? {} : { [RUN_NEW]: { status: variant.newStatus || 'published' } }),
+        ...(variant.omitNewRun ? {} : {
+          [RUN_NEW]: {
+            status: variant.newStatus || 'published',
+            project_id: variant.newProjectId || 'project-classified',
+          },
+        }),
       });
       if (variant.receipt) {
         ensureCurrentPublicationReceipt(siteDir, {

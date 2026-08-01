@@ -54,9 +54,15 @@ let siteDir;
 // ---------------------------------------------------------------------------
 
 function stubDb(seed = {}) {
-  const runs = new Map(Object.entries(seed));
+  const runs = new Map(Object.entries(seed).map(([id, row]) => [id, {
+    project_id: 'project-contained',
+    ...row,
+  }]));
   return {
     getRun: (id) => runs.get(id) || null,
+    getProject: (id) => id === 'project-contained'
+      ? { project_id: id, site_tag: SITE_TAG }
+      : (id === 'project-other' ? { project_id: id, site_tag: 'site-other' } : null),
     updateRunStatus: (id, status, endedAt) => {
       const row = runs.get(id);
       if (row) {
@@ -360,6 +366,28 @@ describe('journal identity + path containment (Correction A)', () => {
     expect(result.rejected).toEqual([{ file: path.basename(file), reason: 'site_tag_mismatch' }]);
     expect(db._runs.get(RUN_A).status).toBe('publishing');
     expect(fs.existsSync(`${file}.rejected`)).toBe(true);
+    expect(liveFingerprint()).toBe(liveBefore);
+    expect(snapshotOutsideSite()).toEqual(outsideBefore);
+  });
+
+  it('rejects a valid journal when the durable run belongs to another site', () => {
+    plantDerivedDirs(RUN_A);
+    const db = stubDb({
+      [RUN_A]: { status: 'publishing', project_id: 'project-other' },
+    });
+    const file = writeJournal(RUN_A, validJournal(RUN_A, {
+      expected_fingerprint: liveFingerprint(),
+    }));
+    const outsideBefore = snapshotOutsideSite();
+    const liveBefore = liveFingerprint();
+
+    const result = recoverSitePublications({ siteDir, db, siteTag: SITE_TAG });
+
+    expect(result.rejected).toEqual([{ file: path.basename(file), reason: 'run_site_mismatch' }]);
+    expect(result.published).toEqual([]);
+    expect(db._runs.get(RUN_A).status).toBe('publishing');
+    expect(fs.existsSync(`${file}.rejected`)).toBe(true);
+    expect(derivedDirsIntact(RUN_A)).toBe(true);
     expect(liveFingerprint()).toBe(liveBefore);
     expect(snapshotOutsideSite()).toEqual(outsideBefore);
   });

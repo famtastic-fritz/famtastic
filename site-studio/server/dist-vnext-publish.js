@@ -177,6 +177,17 @@ function runIdTimestampMs(runId) {
   return match ? Number(match[1]) : null;
 }
 
+/**
+ * Prove that a durable run belongs to the explicit site being recovered.
+ * Journal and receipt bodies are adversary-writable and therefore cannot make
+ * this ownership claim themselves: it must come from the run -> project rows.
+ */
+function runBelongsToSite(db, run, siteTag) {
+  if (!run || typeof run.project_id !== 'string' || typeof db.getProject !== 'function') return false;
+  const project = db.getProject(run.project_id);
+  return !!project && project.site_tag === siteTag;
+}
+
 function isPathInside(rootReal, candidate) {
   return candidate === rootReal || candidate.startsWith(rootReal + path.sep);
 }
@@ -701,6 +712,11 @@ function recoverSitePublications({ siteDir, db, siteTag }) {
 
     const runId = identity.runId;
     const run = typeof db.getRun === 'function' ? db.getRun(runId) : null;
+    if (run && !runBelongsToSite(db, run, explicitSiteTag)) {
+      quarantinePublicationFile(file, 'rejected');
+      result.rejected.push({ file: name, reason: 'run_site_mismatch' });
+      continue;
+    }
     const status = run ? run.status : null;
     const liveMatches = liveFingerprint !== null
       && typeof journal.expected_fingerprint === 'string'
@@ -767,7 +783,10 @@ function recoverSitePublications({ siteDir, db, siteTag }) {
         const receiptOwnsLive = receiptIsNewerRun
           && liveFingerprint !== null
           && receipt.fingerprint === liveFingerprint;
-        if (receiptRun && receiptRun.status === 'published' && receiptOwnsLive) {
+        if (receiptRun
+          && receiptRun.status === 'published'
+          && runBelongsToSite(db, receiptRun, explicitSiteTag)
+          && receiptOwnsLive) {
           // Legitimate supersession: the newer run provably owns the live
           // artifact, so the older journal's mismatch is fully explained.
           quarantinePublicationFile(file, 'superseded');
@@ -814,4 +833,5 @@ module.exports = {
   stageDirName,
   backupDirName,
   runIdTimestampMs,
+  runBelongsToSite,
 };
