@@ -36,10 +36,64 @@
  *
  * Crash recovery (recoverSitePublications) is driven by the journal + the
  * fingerprint, and is IDEMPOTENT — repeated restarts converge to the same
- * final state. For each journal whose run is durably 'publishing':
+ * final state.
+ *
+ * ── JOURNAL IDENTITY + PATH CONTAINMENT (never trust journal paths) ────────
+ *
+ * A journal is adversary-writable data: recovery never lets a journal steer
+ * filesystem operations outside the explicit site directory. Before ANY read,
+ * rename, recursive deletion, restoration, or cleanup, each journal must pass
+ * the identity gate (validateJournalIdentity):
+ *   - the journal FILENAME must be exactly .dist-vnext-publication-<runId>.json
+ *     where <runId> matches the canonical run-id format (^run_\d+_[0-9a-f]{4}$,
+ *     from runtime-vnext/lib/id.js generateRunId) — anything else is a foreign
+ *     journal filename
+ *   - the body must parse as JSON with publication_mode 'external_atomic'
+ *   - journal.run_id must match the canonical format AND equal the filename's
+ *     run id (mismatched run ids are rejected)
+ *   - journal.site_tag must equal the explicit site being recovered
+ *   - journal.stage_dir / journal.backup_dir are NEVER used to locate anything;
+ *     the operational directory names are DERIVED from the validated run id
+ *     (.dist-vnext-<runId>-tmp / .dist-vnext-backup-<runId>). Stored names that
+ *     disagree with the derived convention mark the journal as tampered — this
+ *     is where `..`, absolute paths, separators, encoded traversal and
+ *     Windows-style backslash paths are rejected.
+ * Every operational path is additionally resolved (resolveInsideSite) and must
+ * provably stay inside the real site directory: lexical containment after
+ * path.resolve AND, for paths that exist, realpath containment. A planted
+ * symlink whose target escapes the site (a journal file, a staged/backup dir,
+ * dist-vnext itself) is never read through, renamed, restored from, or
+ * recursively deleted — the journal driving it is rejected. (Removing a
+ * symlink itself is always safe; the gate exists so recovery also never READS
+ * outside data and never mistakes an outside tree for a restorable backup.)
+ * Rejected/corrupt/foreign journals are QUARANTINED inside the site dir by
+ * renaming them to `<filename>.rejected` — the evidence is retained for
+ * diagnosis, never silently deleted, and never leaves the site dir.
+ * When multiple journals exist they are processed in deterministic (sorted
+ * filename) order, each independently validated; a rejection never affects
+ * the processing of the remaining journals.
+ *
+ * ── CURRENT-PUBLICATION RECEIPT (durable ownership) ────────────────────────
+ *
+ * When a publication is confirmed published, the caller (and recovery, when it
+ * confirms a publication) atomically persists
+ *   sites/<tag>/.vnext-current-publication.json
+ * recording { run_id, site_tag, fingerprint, published_at } — the durable
+ * statement of WHICH run owns the live dist-vnext artifact. It holds no
+ * credentials. The name deliberately sits outside the `.dist-vnext-*` prefix
+ * family, which the publication flow treats as transient debris. Writes are
+ * idempotent: re-ensuring the same run+fingerprint is a no-op, so repeated
+ * restarts converge byte-for-byte. A corrupt or foreign receipt is quarantined
+ * to `.rejected` and treated as absent (ownership then cannot be proven —
+ * the safe direction).
+ *
+ * ── RECOVERY DECISION TABLE ────────────────────────────────────────────────
+ *
+ * For each VALID journal whose run is durably 'publishing':
  *   - live dist-vnext MATCHES the expected fingerprint
- *       -> the swap landed before the crash: mark the run 'published', remove
- *          the run's backup + staged dirs and the journal
+ *       -> the swap landed before the crash: mark the run 'published', ensure
+ *          the current-publication receipt, remove the run's backup + staged
+ *          dirs and the journal
  *   - live does NOT match, run-specific backup present
  *       -> interrupted between live->backup and staged->live: restore the
  *          backup to dist-vnext, remove the staged dir, mark 'publish_failed'
@@ -49,11 +103,21 @@
  *          mark 'publish_failed'
  * For a journal whose run is already 'published':
  *   - live matches -> crash hit between the 'published' update and journal
- *     cleanup: remove backup/staged dirs + journal
+ *     cleanup: ensure the receipt, remove backup/staged dirs + journal
  *   - live provably does NOT match -> the run DID publish its artifact earlier
- *     (historical fact) and the live tree was changed afterwards; be
- *     conservative: flag the mismatch (console.warn), NEVER delete the live
- *     artifact, drop the stale journal so restarts converge
+ *     (historical fact) and the live tree was changed afterwards. Classify
+ *     durably instead of silently dropping the journal:
+ *       * SUPERSEDED — a NEWER run (larger run-id timestamp) exists that
+ *         belongs to the same site, is durably 'published', and OWNS the live
+ *         fingerprint per the current-publication receipt (re-fingerprinted
+ *         live == receipt fingerprint). The older journal is closed by
+ *         renaming it to `<filename>.superseded`; restarts converge.
+ *       * UNEXPLAINED INCONSISTENCY — no newer published run durably explains
+ *         the live fingerprint: the run's durable status becomes
+ *         'publication_inconsistent' (observable via the build-status
+ *         endpoint, the recovery report and a console warning), the journal is
+ *         quarantined to `<filename>.inconsistent`, and the live artifact is
+ *         NEVER deleted. Repeated restarts converge to this same state.
  * For a journal in any other (terminal/missing) run state the publication was
  * already resolved in-process; only the journal cleanup was lost — remove it.
  * A 'publishing' run with NO journal predates this transaction (or died before
@@ -88,6 +152,63 @@ const BACKUP_PREFIX = '.dist-vnext-backup-';
 const JOURNAL_PREFIX = '.dist-vnext-publication-';
 const JOURNAL_SUFFIX = '.json';
 const PUBLICATION_MODE = 'external_atomic';
+// The durable "which run owns live dist-vnext" receipt (see header). Its name
+// deliberately does NOT start with '.dist-vnext-': that prefix family is
+// transient publication debris (staging/backup/journal) swept by recovery and
+// asserted empty by the crash-consistency tests, while the receipt persists.
+const RECEIPT_NAME = '.vnext-current-publication.json';
+// Canonical run-id shape from runtime-vnext/lib/id.js generateRunId():
+// `run_<timestamp-ms>_<4-char-hex>`. Journals/receipts carrying anything else
+// are foreign. Capture groups expose the embedded timestamp for ordering.
+const RUN_ID_PATTERN = /^run_(\d+)_([0-9a-f]{4})$/;
+const FINGERPRINT_PATTERN = /^sha256:[0-9a-f]{64}$/;
+
+function stageDirName(runId) {
+  return `${TMP_PREFIX}${runId}${TMP_SUFFIX}`;
+}
+
+function backupDirName(runId) {
+  return `${BACKUP_PREFIX}${runId}`;
+}
+
+/** Millisecond timestamp embedded in a canonical run id, or null. */
+function runIdTimestampMs(runId) {
+  const match = typeof runId === 'string' ? RUN_ID_PATTERN.exec(runId) : null;
+  return match ? Number(match[1]) : null;
+}
+
+function isPathInside(rootReal, candidate) {
+  return candidate === rootReal || candidate.startsWith(rootReal + path.sep);
+}
+
+/**
+ * Resolve a single path component (a NAME, not a path) inside a site dir,
+ * refusing anything that could escape it. Returns the absolute resolved path,
+ * or null when:
+ *   - the name is not a plain basename (`..`, `.`, empty, contains `/`, `\\`
+ *     or NUL, or is absolute on POSIX or Windows), or
+ *   - the resolved path is not lexically contained in the site dir, or
+ *   - the path EXISTS and its real location escapes the site dir (a planted
+ *     symlink). A nonexistent path passes: it has no real location yet, and
+ *     its lexical location is provably inside.
+ * Callers must treat null as "never touch": no read-through, rename, restore,
+ * or recursive delete against that path.
+ */
+function resolveInsideSite(siteRootReal, name) {
+  if (typeof name !== 'string' || name === '' || name === '.' || name === '..') return null;
+  if (name.includes('\0') || name.includes('/') || name.includes('\\')) return null;
+  if (path.isAbsolute(name) || path.win32.isAbsolute(name)) return null;
+  const resolved = path.resolve(siteRootReal, name);
+  if (!isPathInside(siteRootReal, resolved)) return null;
+  let real = null;
+  try {
+    real = fs.realpathSync(resolved);
+  } catch {
+    real = null; // does not exist — lexical containment above is sufficient
+  }
+  if (real !== null && !isPathInside(siteRootReal, real)) return null;
+  return resolved;
+}
 
 // TEST-ONLY hook — see header. Returns 'stage' | 'swap' | null.
 function publishFailMode() {
@@ -178,31 +299,199 @@ function writePublicationJournal(siteDir, journal) {
 }
 
 /**
- * Read every publication journal under a site dir. Unparseable journals are
- * returned as { file, journal: null } so recovery can drop them
- * conservatively. Orphan journal temp files (`*.json.<pid>.tmp`) are not
- * journals and are not returned (recoverSitePublications sweeps them).
+ * Read every publication journal under a site dir, in deterministic (sorted
+ * filename) order. Each entry is { name, file, journal }; journal is null when
+ * the file was not safely readable as a journal — unparseable JSON, a
+ * non-regular file, or a SYMLINK whose real target escapes the site dir (such
+ * a journal is never read through: its content stays unknown and unread).
+ * Orphan journal temp files (`*.json.<pid>.tmp`) are not journals and are not
+ * returned (recoverSitePublications sweeps them).
  */
 function readPublicationJournals(siteDir) {
   if (!fs.existsSync(siteDir)) return [];
+  let siteRootReal;
+  try {
+    siteRootReal = fs.realpathSync(siteDir);
+  } catch {
+    siteRootReal = path.resolve(siteDir);
+  }
+  const names = fs.readdirSync(siteDir)
+    .filter((name) => name.startsWith(JOURNAL_PREFIX) && name.endsWith(JOURNAL_SUFFIX))
+    .sort();
   const journals = [];
-  for (const name of fs.readdirSync(siteDir)) {
-    if (!name.startsWith(JOURNAL_PREFIX) || !name.endsWith(JOURNAL_SUFFIX)) continue;
+  for (const name of names) {
     const file = path.join(siteDir, name);
-    if (!fs.statSync(file).isFile()) continue;
-    let journal = null;
+    let safeToRead = false;
     try {
-      journal = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const lst = fs.lstatSync(file);
+      if (lst.isSymbolicLink()) {
+        const real = fs.realpathSync(file);
+        safeToRead = isPathInside(siteRootReal, real) && fs.statSync(file).isFile();
+      } else {
+        safeToRead = lst.isFile();
+      }
     } catch {
-      journal = null;
+      safeToRead = false;
     }
-    journals.push({ file, journal });
+    let journal = null;
+    if (safeToRead) {
+      try {
+        journal = JSON.parse(fs.readFileSync(file, 'utf8'));
+      } catch {
+        journal = null;
+      }
+    }
+    journals.push({ name, file, journal });
   }
   return journals;
 }
 
 function removePublicationJournal(siteDir, runId) {
   fs.rmSync(publicationJournalPath(siteDir, runId), { force: true });
+}
+
+/**
+ * Journal identity gate (Correction A, see header). Pure validation — no
+ * filesystem access. Returns { ok: true, runId } or { ok: false, reason }.
+ * The run id is taken from the FILENAME (the durable marker written by this
+ * module); the body must agree with it exactly, name the explicit site being
+ * recovered, and carry stage/backup names identical to the ones derived from
+ * the run id. Any disagreement — including `..`, separators, absolute paths,
+ * encoded traversal, or Windows-style backslashes smuggled into the stored
+ * names — rejects the journal before anything is read, renamed, restored, or
+ * deleted on its behalf.
+ */
+function validateJournalIdentity({ name, journal, siteTag }) {
+  const fileRunId = name.slice(JOURNAL_PREFIX.length, name.length - JOURNAL_SUFFIX.length);
+  if (!RUN_ID_PATTERN.test(fileRunId)) {
+    return { ok: false, reason: 'foreign_journal_filename' };
+  }
+  if (!journal || typeof journal !== 'object' || Array.isArray(journal)) {
+    return { ok: false, reason: 'malformed_json' };
+  }
+  if (journal.publication_mode !== PUBLICATION_MODE) {
+    return { ok: false, reason: 'unexpected_publication_mode' };
+  }
+  if (typeof journal.run_id !== 'string' || !RUN_ID_PATTERN.test(journal.run_id)) {
+    return { ok: false, reason: 'invalid_run_id' };
+  }
+  if (journal.run_id !== fileRunId) {
+    return { ok: false, reason: 'run_id_filename_mismatch' };
+  }
+  if (journal.site_tag !== siteTag) {
+    return { ok: false, reason: 'site_tag_mismatch' };
+  }
+  if (journal.stage_dir !== stageDirName(fileRunId)) {
+    return { ok: false, reason: 'stage_dir_mismatch' };
+  }
+  if (journal.backup_dir !== backupDirName(fileRunId)) {
+    return { ok: false, reason: 'backup_dir_mismatch' };
+  }
+  return { ok: true, runId: fileRunId };
+}
+
+/**
+ * Quarantine a publication file INSIDE the site dir by renaming it to
+ * `<filename>.<classification>` ('rejected' | 'superseded' | 'inconsistent').
+ * The evidence is retained, never silently deleted; the quarantined name no
+ * longer matches the journal pattern, so later restarts skip it (convergent).
+ * Never throws: a quarantine failure is logged and the file is left in place.
+ */
+function quarantinePublicationFile(file, classification) {
+  const target = `${file}.${classification}`;
+  try {
+    fs.rmSync(target, { force: true });
+    fs.renameSync(file, target);
+    return target;
+  } catch (err) {
+    console.warn(`[dist-vnext-publish] failed to quarantine ${path.basename(file)} as .${classification}: ${err.message}`);
+    return null;
+  }
+}
+
+function currentPublicationReceiptPath(siteDir) {
+  return path.join(siteDir, RECEIPT_NAME);
+}
+
+function isValidReceipt(receipt, siteTag) {
+  return !!receipt && typeof receipt === 'object' && !Array.isArray(receipt)
+    && receipt.publication_mode === PUBLICATION_MODE
+    && typeof receipt.run_id === 'string' && RUN_ID_PATTERN.test(receipt.run_id)
+    && receipt.site_tag === siteTag
+    && typeof receipt.fingerprint === 'string' && FINGERPRINT_PATTERN.test(receipt.fingerprint);
+}
+
+/**
+ * Read the current-publication receipt of a site, or null when there is no
+ * USABLE one. A receipt symlink escaping the site is never read through; a
+ * corrupt or identity-invalid receipt is quarantined to `.rejected` and
+ * treated as absent (ownership cannot be proven — the safe direction).
+ */
+function readCurrentPublicationReceipt(siteDir, siteTag) {
+  const file = currentPublicationReceiptPath(siteDir);
+  if (!fs.existsSync(file)) return null;
+  let siteRootReal;
+  try {
+    siteRootReal = fs.realpathSync(siteDir);
+  } catch {
+    siteRootReal = path.resolve(siteDir);
+  }
+  try {
+    const lst = fs.lstatSync(file);
+    if (lst.isSymbolicLink() && !isPathInside(siteRootReal, fs.realpathSync(file))) {
+      quarantinePublicationFile(file, 'rejected');
+      return null;
+    }
+    if (!fs.statSync(file).isFile()) return null;
+  } catch {
+    return null;
+  }
+  let receipt = null;
+  try {
+    receipt = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    receipt = null;
+  }
+  if (!isValidReceipt(receipt, siteTag)) {
+    quarantinePublicationFile(file, 'rejected');
+    return null;
+  }
+  return receipt;
+}
+
+/**
+ * Durably record WHICH run owns the live dist-vnext artifact (see header).
+ * Atomic (temp file + rename), no credentials. Idempotent: when the existing
+ * receipt already records the same run + fingerprint this is a no-op, so
+ * repeated restarts converge byte-for-byte. Throws on malformed input —
+ * a receipt with a bad run id or fingerprint must never be persisted.
+ */
+function ensureCurrentPublicationReceipt(siteDir, { runId, siteTag, fingerprint, publishedAt }) {
+  if (typeof siteTag !== 'string' || siteTag === '') {
+    throw new Error('a siteTag is required for the current-publication receipt');
+  }
+  if (typeof runId !== 'string' || !RUN_ID_PATTERN.test(runId)) {
+    throw new Error(`invalid run_id for the current-publication receipt: ${runId}`);
+  }
+  if (typeof fingerprint !== 'string' || !FINGERPRINT_PATTERN.test(fingerprint)) {
+    throw new Error(`invalid fingerprint for the current-publication receipt: ${fingerprint}`);
+  }
+  const finalPath = currentPublicationReceiptPath(siteDir);
+  const existing = readCurrentPublicationReceipt(siteDir, siteTag);
+  if (existing && existing.run_id === runId && existing.fingerprint === fingerprint) {
+    return { receiptPath: finalPath, updated: false };
+  }
+  const receipt = {
+    publication_mode: PUBLICATION_MODE,
+    run_id: runId,
+    site_tag: siteTag,
+    fingerprint,
+    published_at: publishedAt || new Date().toISOString(),
+  };
+  const tmpPath = `${finalPath}.${process.pid}.tmp`;
+  fs.writeFileSync(tmpPath, JSON.stringify(receipt, null, 2));
+  fs.renameSync(tmpPath, finalPath);
+  return { receiptPath: finalPath, updated: true };
 }
 
 /**
@@ -215,8 +504,8 @@ function removePublicationJournal(siteDir, runId) {
 function publishDistVnextAtomic({ workspaceRoot, distVnextDir, runId, expectedPages, siteTag }) {
   const outputsDir = path.join(workspaceRoot, 'outputs');
   const siteDir = path.dirname(distVnextDir);
-  const tmpDir = path.join(siteDir, `${TMP_PREFIX}${runId}${TMP_SUFFIX}`);
-  const backupDir = path.join(siteDir, `${BACKUP_PREFIX}${runId}`);
+  const tmpDir = path.join(siteDir, stageDirName(runId));
+  const backupDir = path.join(siteDir, backupDirName(runId));
 
   const validation = validateOutputs(outputsDir, expectedPages);
   if (!validation.ok) {
@@ -252,8 +541,8 @@ function publishDistVnextAtomic({ workspaceRoot, distVnextDir, runId, expectedPa
     run_id: runId,
     site_tag: siteTag || path.basename(siteDir),
     expected_fingerprint: expectedFingerprint,
-    stage_dir: path.basename(tmpDir),
-    backup_dir: path.basename(backupDir),
+    stage_dir: stageDirName(runId),
+    backup_dir: backupDirName(runId),
     status: 'publishing',
     created_at: new Date().toISOString(),
   });
@@ -339,51 +628,97 @@ function reconcileDistVnextDirs(siteDir) {
  * Journal-driven crash recovery for externally managed (Operator V1)
  * publications under one site dir. IDEMPOTENT: every branch leaves a final
  * state that a repeated call (or repeated process restart) reproduces
- * exactly. See the module header for the full decision table.
+ * exactly. Every journal passes the identity + containment gate before any
+ * filesystem operation, and published-run fingerprint mismatches are
+ * classified durably (superseded / publication_inconsistent). See the module
+ * header for the full gate, quarantine, receipt, and decision-table docs.
  *
  * @param {object} args
  * @param {string} args.siteDir  sites/<tag> directory
  * @param {object} args.db       runtime-vnext state db (getRun/updateRunStatus)
+ * @param {string} [args.siteTag] the explicit site being recovered; journals
+ *                                naming any other site are rejected. Defaults
+ *                                to basename(siteDir) (sites/<tag> layout).
  */
-function recoverSitePublications({ siteDir, db }) {
-  const result = { published: [], failed: [], restored: [], removed: [], mismatches: [] };
+function recoverSitePublications({ siteDir, db, siteTag }) {
+  const result = {
+    published: [], failed: [], restored: [], removed: [],
+    rejected: [], superseded: [], inconsistent: [], mismatches: [],
+  };
   if (!fs.existsSync(siteDir)) return result;
+  const explicitSiteTag = typeof siteTag === 'string' && siteTag !== '' ? siteTag : path.basename(siteDir);
+  const siteRootReal = fs.realpathSync(siteDir);
   const distVnextDir = path.join(siteDir, 'dist-vnext');
 
-  // Sweep orphan journal temp files (crash between temp write and rename).
+  // Sweep orphan journal/receipt temp files (crash between temp write and
+  // rename). These are this module's own `*.<pid>.tmp` names inside the site.
   for (const name of fs.readdirSync(siteDir)) {
     if (name.startsWith(JOURNAL_PREFIX) && name.includes(`${JOURNAL_SUFFIX}.`) && name.endsWith('.tmp')) {
+      fs.rmSync(path.join(siteDir, name), { force: true });
+      result.removed.push(name);
+    } else if (name.startsWith(`${RECEIPT_NAME}.`) && name.endsWith('.tmp')) {
       fs.rmSync(path.join(siteDir, name), { force: true });
       result.removed.push(name);
     }
   }
 
-  for (const { file, journal } of readPublicationJournals(siteDir)) {
-    // Corrupt or foreign journal: it cannot fingerprint-identify a run, so no
-    // publication claim may be derived from it. Drop it; leftover dirs fall
-    // back to reconcileDistVnextDirs and the caller's legacy rules.
-    if (!journal || journal.publication_mode !== PUBLICATION_MODE || typeof journal.run_id !== 'string') {
-      fs.rmSync(file, { force: true });
-      result.removed.push(path.basename(file));
+  // The live artifact's identity, computed once. A dist-vnext whose real
+  // location escapes the site dir (planted symlink) is never read through:
+  // it simply matches no journaled fingerprint.
+  let liveFingerprint = null;
+  if (fs.existsSync(distVnextDir) && resolveInsideSite(siteRootReal, 'dist-vnext') !== null) {
+    try {
+      liveFingerprint = fingerprintDir(distVnextDir);
+    } catch {
+      liveFingerprint = null;
+    }
+  }
+
+  for (const { name, file, journal } of readPublicationJournals(siteDir)) {
+    // ── Identity + containment gate: nothing below may be steered by an
+    // unvalidated journal. Operational dir names are DERIVED from the
+    // validated run id and proven contained before use.
+    const identity = validateJournalIdentity({ name, journal, siteTag: explicitSiteTag });
+    let tmpDir = null;
+    let backupDir = null;
+    if (identity.ok) {
+      tmpDir = resolveInsideSite(siteRootReal, stageDirName(identity.runId));
+      backupDir = resolveInsideSite(siteRootReal, backupDirName(identity.runId));
+      if (tmpDir === null || backupDir === null) {
+        identity.ok = false;
+        identity.reason = 'path_escapes_site';
+      }
+    }
+    if (!identity.ok) {
+      // Corrupt, foreign, or hostile journal: no publication claim and no
+      // filesystem operation may be derived from it. Quarantine the evidence
+      // inside the site dir; leftover dirs fall back to reconcileDistVnextDirs
+      // and the caller's legacy rules.
+      quarantinePublicationFile(file, 'rejected');
+      result.rejected.push({ file: name, reason: identity.reason });
       continue;
     }
 
-    const runId = journal.run_id;
+    const runId = identity.runId;
     const run = typeof db.getRun === 'function' ? db.getRun(runId) : null;
     const status = run ? run.status : null;
-    const tmpDir = path.join(siteDir, typeof journal.stage_dir === 'string' ? journal.stage_dir : `${TMP_PREFIX}${runId}${TMP_SUFFIX}`);
-    const backupDir = path.join(siteDir, typeof journal.backup_dir === 'string' ? journal.backup_dir : `${BACKUP_PREFIX}${runId}`);
-    const liveMatches = fs.existsSync(distVnextDir)
+    const liveMatches = liveFingerprint !== null
       && typeof journal.expected_fingerprint === 'string'
-      && fingerprintDir(distVnextDir) === journal.expected_fingerprint;
+      && liveFingerprint === journal.expected_fingerprint;
 
     if (status === 'publishing') {
       if (liveMatches) {
         // The swap landed before the crash; only the 'published' update (and
-        // cleanup) was lost. Confirm the publication.
+        // cleanup) was lost. Confirm the publication and its ownership
+        // receipt. A receipt-write failure must not abort crash recovery.
         fs.rmSync(backupDir, { recursive: true, force: true });
         fs.rmSync(tmpDir, { recursive: true, force: true });
         db.updateRunStatus(runId, 'published', new Date().toISOString());
+        try {
+          ensureCurrentPublicationReceipt(siteDir, { runId, siteTag: explicitSiteTag, fingerprint: journal.expected_fingerprint });
+        } catch (err) {
+          console.warn(`[dist-vnext-publish] failed to persist the current-publication receipt for ${runId}: ${err.message}`);
+        }
         fs.rmSync(file, { force: true });
         result.published.push(runId);
       } else {
@@ -391,7 +726,8 @@ function recoverSitePublications({ siteDir, db }) {
           // Interrupted between live->backup and staged->live (or the staged
           // artifact never became the live one): restore the previous complete
           // artifact. The live dir, when present here, provably is not the
-          // journaled artifact and a complete backup exists.
+          // journaled artifact and a complete backup exists. (If dist-vnext
+          // is a symlink, rmSync removes the link itself, never the target.)
           fs.rmSync(distVnextDir, { recursive: true, force: true });
           fs.renameSync(backupDir, distVnextDir);
           result.restored.push(runId);
@@ -408,24 +744,51 @@ function recoverSitePublications({ siteDir, db }) {
         // Crash between the 'published' update and journal cleanup.
         fs.rmSync(backupDir, { recursive: true, force: true });
         fs.rmSync(tmpDir, { recursive: true, force: true });
+        try {
+          ensureCurrentPublicationReceipt(siteDir, { runId, siteTag: explicitSiteTag, fingerprint: journal.expected_fingerprint });
+        } catch (err) {
+          console.warn(`[dist-vnext-publish] failed to persist the current-publication receipt for ${runId}: ${err.message}`);
+        }
         fs.rmSync(file, { force: true });
-        result.removed.push(path.basename(file));
+        result.removed.push(name);
       } else {
         // The run DID publish its artifact (historical fact); the live tree
-        // provably no longer matches that identity — it was changed
-        // afterwards (newer build or out-of-band edit). Be conservative:
-        // flag the mismatch, never delete the live artifact, and drop the
-        // stale journal so restarts converge on this same state.
+        // provably no longer matches that identity. Classify durably (see
+        // header): superseded only when a NEWER published run owns the live
+        // fingerprint per the current-publication receipt; otherwise an
+        // unexplained inconsistency. NEVER delete the live artifact.
+        const receipt = readCurrentPublicationReceipt(siteDir, explicitSiteTag);
+        const receiptIsNewerRun = receipt !== null
+          && receipt.run_id !== runId
+          && (runIdTimestampMs(receipt.run_id) || 0) > (runIdTimestampMs(runId) || 0);
+        const receiptRun = receiptIsNewerRun && typeof db.getRun === 'function'
+          ? db.getRun(receipt.run_id)
+          : null;
+        const receiptOwnsLive = receiptIsNewerRun
+          && liveFingerprint !== null
+          && receipt.fingerprint === liveFingerprint;
+        if (receiptRun && receiptRun.status === 'published' && receiptOwnsLive) {
+          // Legitimate supersession: the newer run provably owns the live
+          // artifact, so the older journal's mismatch is fully explained.
+          quarantinePublicationFile(file, 'superseded');
+          result.superseded.push({ run_id: runId, superseded_by: receipt.run_id });
+          continue;
+        }
+        // Unexplained inconsistency: no newer published run durably explains
+        // the live fingerprint. Persist the state, retain the evidence, keep
+        // the live artifact, and converge on repeat restarts.
         result.mismatches.push(runId);
-        console.warn(`[dist-vnext-publish] live dist-vnext does not match the journaled artifact of published run ${runId} under ${siteDir}; leaving the live artifact untouched`);
-        fs.rmSync(file, { force: true });
+        result.inconsistent.push(runId);
+        console.warn(`[dist-vnext-publish] live dist-vnext does not match the journaled artifact of published run ${runId} under ${siteDir} and no newer published run owns it; marking the run publication_inconsistent and leaving the live artifact untouched`);
+        db.updateRunStatus(runId, 'publication_inconsistent', new Date().toISOString());
+        quarantinePublicationFile(file, 'inconsistent');
       }
     } else {
       // Terminal or missing run row: the publication was already resolved
       // in-process (the filesystem was restored before the terminal status
       // was persisted); only the journal cleanup was lost to the crash.
       fs.rmSync(file, { force: true });
-      result.removed.push(path.basename(file));
+      result.removed.push(name);
     }
   }
   return result;
@@ -442,4 +805,13 @@ module.exports = {
   removePublicationJournal,
   publicationJournalPath,
   crashAfterHook,
+  validateJournalIdentity,
+  resolveInsideSite,
+  quarantinePublicationFile,
+  ensureCurrentPublicationReceipt,
+  readCurrentPublicationReceipt,
+  currentPublicationReceiptPath,
+  stageDirName,
+  backupDirName,
+  runIdTimestampMs,
 };

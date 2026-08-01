@@ -55,7 +55,10 @@
  *     the live dist-vnext is verified against that fingerprint before the run
  *     may become 'published'. Boot-time and lazy recovery resolve any run
  *     interrupted mid-transaction by comparing the live artifact to the
- *     journaled fingerprint (idempotent across repeated restarts).
+ *     journaled fingerprint (idempotent across repeated restarts). Once
+ *     'published' is durable, a site-local current-publication receipt records
+ *     which run owns the live artifact; recovery uses it to classify later
+ *     fingerprint mismatches (superseded vs publication_inconsistent).
  *   - Concurrency guard is an IN-PROCESS per-site set. The feature's persisted
  *     SQLite build_locks table depended on the feature's migration framework,
  *     which does not exist on main; no lock table is ported.
@@ -80,6 +83,7 @@ const {
   reconcileDistVnextDirs,
   recoverSitePublications,
   removePublicationJournal,
+  ensureCurrentPublicationReceipt,
   crashAfterHook,
 } = require('./dist-vnext-publish');
 
@@ -116,7 +120,7 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
     const publishingRunIds = vnextDb.listRunsByStatus('publishing').map((run) => run.run_id);
     for (const project of vnextDb.listProjects()) {
       const siteDir = path.dirname(getDistVnextDir(project.site_tag));
-      recoverSitePublications({ siteDir, db: vnextDb });
+      recoverSitePublications({ siteDir, db: vnextDb, siteTag: project.site_tag });
       reconcileDistVnextDirs(siteDir);
     }
     for (const runId of publishingRunIds) {
@@ -295,11 +299,12 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
       // after the terminal status is durably persisted.
       const siteDir = path.dirname(publishDir);
       vnextDb.updateRunStatus(runContext.run_id, 'publishing');
+      let publishOutcome;
       try {
         // Lazy per-site recovery of publications abandoned by a crashed build.
-        recoverSitePublications({ siteDir, db: vnextDb });
+        recoverSitePublications({ siteDir, db: vnextDb, siteTag });
         reconcileDistVnextDirs(siteDir);
-        publishDistVnextAtomic({
+        publishOutcome = publishDistVnextAtomic({
           workspaceRoot: runContext.workspace_root,
           distVnextDir: publishDir,
           runId: runContext.run_id,
@@ -317,6 +322,15 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
         });
       }
       vnextDb.updateRunStatus(runContext.run_id, 'published', new Date().toISOString());
+      // Durably record that THIS run now owns the live dist-vnext artifact
+      // (see dist-vnext-publish.js header): recovery uses the receipt to
+      // classify later fingerprint mismatches as supersession vs unexplained
+      // inconsistency. Written after the 'published' status is durable.
+      ensureCurrentPublicationReceipt(siteDir, {
+        runId: runContext.run_id,
+        siteTag,
+        fingerprint: publishOutcome.fingerprint,
+      });
       removePublicationJournal(siteDir, runContext.run_id);
 
       const files = fs.existsSync(publishDir)
