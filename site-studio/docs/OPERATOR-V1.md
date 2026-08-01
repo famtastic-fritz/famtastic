@@ -48,6 +48,7 @@ The ambient global `TAG` still exists — but only for legacy surfaces. It is
 | `/api/verify` | POST | query/body `siteTag` | runs verification against `dist-vnext`; 409 `no_vnext_build` if missing; persists result to `spec.last_verification` |
 | `/api/deploy` | POST | body `siteTag` | body: `env` (`staging`\|`production`, default `staging`); returns `deployment_id`; 409 `deploy_in_progress` / `no_vnext_build`; 412 if Netlify is not configured or no site id is provisioned |
 | `/api/deploy-status` | GET | n/a (deployment-scoped) | `?deployment_id=<id>` required (400 without, 404 unknown); returns the durable deployment record incl. the real proof URL |
+| `/api/integrations/famtastic/proof-jobs` | POST | body `campaign_id` | Public HMAC-authenticated machine endpoint; accepts one idempotent proof job, generates exactly three isolated directions through Shay, and returns `202` with a durable `job_id`. |
 
 ## 3. `sites/<siteTag>/dist-vnext` is the authoritative V1 artifact
 
@@ -89,6 +90,11 @@ V1 "rollback" = re-run the vNext build.
 | — | `~/.netlify/config.json` | Alternative: `netlify login` CLI credentials (config with ≥1 user). |
 | `SITE_DEPLOY_SOURCE_DIR` | `dist` in the script; `dist-vnext` on the V1 path | Artifact selector for `scripts/site-deploy`. The HTTP deploy path injects `dist-vnext`; direct CLI use defaults to legacy `dist`. |
 | `FAMTASTIC_USE_RUNTIME_VNEXT` | unset (off) | Opt-in gate for the legacy `POST /api/vnext-build` + server-bridge pipeline (see §1). Not required for any V1 route. |
+| `FAMTASTIC_PROOF_DISPATCH_SECRET` | — | HMAC secret used to authenticate FAMtastic Designs proof-job requests. |
+| `FAMTASTIC_PROOF_CALLBACK_SECRET` | — | HMAC secret used to sign callbacks to FAMtastic Designs. |
+| `FAMTASTIC_PROOF_JOBS_DIR` | `~/.config/famtastic/proof-jobs` | Durable proof-job records used for idempotency and restart recovery. |
+| `FAMTASTIC_PROOF_OUTPUT_ROOT` | `~/.config/famtastic/proof-output` | Isolated generated artifacts for proof campaigns. |
+| `FAMTASTIC_PROOF_PROVIDER` | `shay` | Proof-generation provider. The supported integration path calls `shay -z`; it does not require Claude or a direct OpenAI API key. |
 
 ## 5. Authentication
 
@@ -191,8 +197,6 @@ studio.bearer, <token>`. A socket that fails auth is destroyed before
 
 ## 8. Deferred architecture work (known, out of V1 scope)
 
-- FAMtastic Designs integration
-- three-proof campaigns
 - additional interfaces beyond `/studio.html`
 - new runtime families
 - standalone-repo extraction

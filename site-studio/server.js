@@ -5,6 +5,7 @@ const { WebSocketServer } = require('ws');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cheerio = require('cheerio');
@@ -984,7 +985,12 @@ function listPages() {
 
 // --- Express app ---
 const app = express();
-app.use(express.json());
+app.use(express.json({
+  verify(req, _res, buffer) {
+    // Signed integrations must verify the exact bytes sent by the caller.
+    req.rawBody = Buffer.from(buffer);
+  },
+}));
 // Operator V1 — resolve { siteTag, runId, requestId } onto req.ctx.
 // Mounted after express.json() so a body-carried siteTag is visible, and before
 // every router so req.ctx exists everywhere. A malformed tag in the body, query
@@ -1004,6 +1010,19 @@ app.use(express.static(path.join(__dirname, 'public'), {
     res.set('Cache-Control', 'no-cache');
   },
 }));
+
+// Public machine-to-machine boundary for FAMtastic Designs. This is mounted
+// before loopback containment because production dispatch may originate on a
+// different host; its exact raw body is authenticated with a dedicated HMAC.
+const { registerFamtasticProofJobRoute } = require('./server/famtastic-proof-job-routes');
+registerFamtasticProofJobRoute({
+  app,
+  generateCampaign: generateProofCampaign,
+  jobsDir: path.resolve(process.env.FAMTASTIC_PROOF_JOBS_DIR || path.join(os.homedir(), '.config', 'famtastic', 'proof-jobs')),
+  outputRoot: path.resolve(process.env.FAMTASTIC_PROOF_OUTPUT_ROOT || path.join(os.homedir(), '.config', 'famtastic', 'proof-output')),
+  dispatchSecret: process.env.FAMTASTIC_PROOF_DISPATCH_SECRET || '',
+  callbackSecret: process.env.FAMTASTIC_PROOF_CALLBACK_SECRET || '',
+});
 
 // Containment: no /api route is reachable from off-host. The preview server on
 // PREVIEW_PORT is unaffected — it serves only built static output and is the
@@ -4253,7 +4272,7 @@ PROOF ID: ${proofId}
 - Make this proof visually distinct from other directions using the selected layout, palette, typography, density, and shape.
 - Every major section must include data-section-id and data-section-type.
 - Editable headings, body copy, CTA text, phone, and email should include data-field-id and data-field-type.
-- Use static HTML, Tailwind CDN, CSS, and minimal inline JavaScript only when needed for navigation.
+- Use static HTML and self-contained CSS. Do not depend on Tailwind, JavaScript, a CDN, or external assets for layout or presentation.
 - Do not create multiple pages. All navigation should point to sections within index.html.`;
 
   return {
@@ -4317,6 +4336,7 @@ CONTENT REQUIREMENTS:
 - Forms are static proof UI only. Do not rely on Netlify, server actions, or production backend processing.
 - Every image must be a transparent placeholder with data-slot-id, data-slot-status="empty", and data-slot-role.
 - Keep the result self-contained and static.
+- Put every required presentation rule in the page's own CSS. Do not use Tailwind utility classes or require scripts/CDNs for styling.
 - Invalid generic copy: "A local business ready to grow online", "Everything [business] needs", "Web Presence", "Brand Identity", "Growth Campaigns".
 
 STYLE REQUIREMENTS:
@@ -4365,6 +4385,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
     maxTokens: 16384,
     callSite: 'proof-template-build',
     timeoutMs: 300000,
+    provider: process.env.FAMTASTIC_PROOF_PROVIDER || 'shay',
   });
   let templateHtml = stripAiHtml(rawTemplate);
   if (proofSpec.famtastic_mode) {
@@ -4388,6 +4409,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
     maxTokens: 16384,
     callSite: 'proof-page-build',
     timeoutMs: 300000,
+    provider: process.env.FAMTASTIC_PROOF_PROVIDER || 'shay',
   });
   let pageHtml = stripAiHtml(rawPage);
   if (pageHtml.length < 50 || !/<html[\s>]/i.test(pageHtml)) {
@@ -4408,6 +4430,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
       maxTokens: 16384,
       callSite: 'proof-page-build-retry',
       timeoutMs: 300000,
+      provider: process.env.FAMTASTIC_PROOF_PROVIDER || 'shay',
     });
     pageHtml = stripAiHtml(retryRawPage);
     contentCheck = verifyClientBriefContent(pageHtml, proofSpec, {
@@ -19709,6 +19732,40 @@ function getAnthropicClient() {
   return _anthropicClient;
 }
 
+function callShayOneshot(prompt, timeoutMs) {
+  return new Promise((resolve) => {
+    const child = spawn(process.env.SHAY_BIN || 'shay', ['-z', prompt, '--ignore-rules'], {
+      cwd: os.tmpdir(),
+      env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      console.error(`[shay-proof] timed out after ${timeoutMs}ms`);
+      finish('');
+    }, timeoutMs);
+    child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    child.on('error', (error) => {
+      console.error('[shay-proof]', error.message);
+      finish('');
+    });
+    child.on('close', (code) => {
+      if (code !== 0) console.error(`[shay-proof] exited ${code}: ${stderr.trim().slice(0, 1000)}`);
+      finish(code === 0 ? stdout.trim() : '');
+    });
+  });
+}
+
 /**
  * Returns true when ANTHROPIC_API_KEY is set and non-empty.
  * When false, all SDK call sites fall back to spawnClaude() subprocess.
@@ -19733,6 +19790,11 @@ function hasAnthropicKey() {
  */
 async function callSDK(prompt, opts = {}) {
   const { maxTokens = 8192, callSite = 'unknown', timeoutMs = 120000, systemPrompt = null } = opts;
+  const provider = opts.provider || 'anthropic';
+  if (provider === 'shay') {
+    const combinedPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+    return callShayOneshot(combinedPrompt, timeoutMs);
+  }
   const model = opts.model || loadSettings().model || 'claude-sonnet-4-6';
 
   // No API key — fall back to spawnClaude() subprocess (Claude Code subscription auth)
