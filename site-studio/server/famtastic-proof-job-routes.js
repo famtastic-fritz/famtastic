@@ -101,9 +101,7 @@ function proofMediaFallback(tag, before, src, after, designDna) {
   const status = /data-slot-status=["']([^"']+)["']/i.exec(attrs)?.[1]?.toLowerCase();
   const transparentPixel = /^data:image\/gif;base64,R0lGODlhAQABA/i.test(src);
   if (status !== 'empty' && !transparentPixel) return null;
-  const role = (/data-slot-role=["']([^"']+)["']/i.exec(attrs)?.[1] || 'feature').toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  const business = designDna?.spec_snapshot?.site_name || 'Business';
-  return `<span class="proof-media-fallback proof-media-fallback--${role}" role="img" aria-label="Decorative visual for ${escapeHtml(business)}"></span>`;
+  throw new Error('Proof artifact contains an unfulfilled image slot');
 }
 
 function stripCustomerVisibleScaffolding(html) {
@@ -145,11 +143,14 @@ function packageProofHtml(artifactPath, html, designDna = {}) {
     if (fallback) return fallback;
     if (/^(?:https?:|data:|\/\/)/i.test(src)) return tag;
     const file = path.resolve(artifactDir, src);
-    if (file.startsWith(artifactDir + path.sep) && fs.existsSync(file) && fs.statSync(file).size <= 200000) {
+    if (file.startsWith(artifactDir + path.sep) && fs.existsSync(file) && fs.statSync(file).size <= 750000) {
       const ext = path.extname(file).toLowerCase();
       const mime = ext === '.svg' ? 'image/svg+xml' : (ext === '.png' ? 'image/png' : (ext === '.webp' ? 'image/webp' : 'image/jpeg'));
       const encoded = fs.readFileSync(file).toString('base64');
       return `<img${before}src="data:${mime};base64,${encoded}"${after}>`;
+    }
+    if (/data-slot-status=["']generated["']/i.test(`${before} ${after}`)) {
+      throw new Error(`Generated proof image is missing or exceeds the portable artifact limit: ${src}`);
     }
     const alt = /alt=["']([^"']*)["']/i.exec(`${before} ${after}`)?.[1]
       || designDna?.spec_snapshot?.site_name

@@ -4467,6 +4467,13 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
     throw proofHttpError(502, `Proof content verification failed: ${contentCheck.failures.join('; ')}`);
   }
 
+  const { fulfillProofMedia } = require('./server/proof-media-fulfillment');
+  const mediaFulfillment = await fulfillProofMedia({
+    artifactPath: indexPath,
+    spec: proofSpec,
+    scriptPath: path.join(__dirname, '..', 'scripts', 'google-media-generate'),
+  });
+
   const thumbnail = await generateProofThumbnail(proofUrl, resolvedOutputDir);
   const elapsedMs = Date.now() - started;
   const designDna = {
@@ -4482,6 +4489,7 @@ async function generateProofArtifact({ proofId, outputDir, spec, proofUrl = null
     template_path: templatePath,
     artifact_path: indexPath,
     thumbnail,
+    media_fulfillment: mediaFulfillment,
     content_verification: contentCheck,
   };
   const designDnaPath = path.join(resolvedOutputDir, 'design-dna.json');

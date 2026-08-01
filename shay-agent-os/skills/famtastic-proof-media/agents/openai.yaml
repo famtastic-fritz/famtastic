@@ -1,0 +1,4 @@
+interface:
+  display_name: "FAMtastic Proof Media"
+  short_description: "Generate and validate customer-ready proof imagery"
+  default_prompt: "Fulfill every proof image slot with relevant, validated imagery before delivery."
