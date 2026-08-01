@@ -74,6 +74,9 @@ function createContentFieldRouter(options = {}) {
     if (!page || !field_id || new_value === undefined) {
       return res.status(400).json({ error: 'page, field_id, and new_value required' });
     }
+    // Validate the page BEFORE any spec read, artifact resolution, versioning or
+    // write — same rule and same response as GET /api/content-fields/:page.
+    if (!isValidPageName(page)) return res.status(400).json({ error: 'Invalid page name' });
 
     // Resolve the site ONCE, explicitly, at request start — the HTML edit, the
     // cascade, the spec write and the EDIT_APPLIED event all name this site.
@@ -100,7 +103,15 @@ function createContentFieldRouter(options = {}) {
       ? field.value
       : (field.value?.text || JSON.stringify(field.value));
 
-    const pagePath = path.join(distVnextDir, page);
+    // Containment: the resolved edit target must stay inside this site's
+    // dist-vnext directory. Defense-in-depth behind isValidPageName — a page
+    // that resolves outside the artifact directory is rejected, never read,
+    // never versioned, never written.
+    const distVnextRoot = path.resolve(distVnextDir);
+    const pagePath = path.resolve(distVnextRoot, page);
+    if (!pagePath.startsWith(distVnextRoot + path.sep)) {
+      return res.status(400).json({ error: 'Invalid page name' });
+    }
     if (!fs.existsSync(pagePath)) return res.status(404).json({ error: 'Page HTML not found' });
 
     let html = fs.readFileSync(pagePath, 'utf8');
