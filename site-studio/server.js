@@ -18470,10 +18470,11 @@ wss.on('connection', (ws) => {
             ? 'production' : 'staging';
           ws.send(JSON.stringify({ type: 'status', content: `Deploying to ${deployEnv}...` }));
           // Legacy WS chat deploy: ambient site, captured once here, ships the
-          // V1 artifact (dist-vnext). No deploymentId — the durable job record
-          // is an HTTP-path contract; completion still writes the legacy
+          // LEGACY artifact (dist) — the V1 artifact (dist-vnext) belongs to the
+          // Operator V1 HTTP path only. No deploymentId — the durable job
+          // record is an HTTP-path contract; completion still writes the legacy
           // spec.environments/deployed_url/deploy_history fields.
-          runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist-vnext' });
+          runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist' });
           break;
         }
 

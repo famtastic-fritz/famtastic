@@ -12,9 +12,13 @@
  *    no-ctx form falls back to `getTag()` once, at dispatch time, for the
  *    legacy WebSocket chat path.
  *
- *  - THE ARTIFACT IS dist-vnext. The spawn injects SITE_DEPLOY_SOURCE_DIR
- *    (default 'dist-vnext') so scripts/site-deploy ships the V1 build
- *    artifact. The script's own default remains legacy 'dist'.
+ *  - THE ARTIFACT FLOWS FROM THE CALLER. `ctx.sourceDir` selects the build
+ *    artifact the spawn ships via SITE_DEPLOY_SOURCE_DIR: the Operator V1
+ *    HTTP route passes 'dist-vnext' explicitly, the legacy WS chat path
+ *    passes 'dist' explicitly. When no sourceDir is supplied the runner
+ *    falls back to the legacy-safe default 'dist' — a caller that omits it
+ *    never silently ships the V1 artifact. The script's own default also
+ *    remains legacy 'dist'.
  *
  *  - THE TARGET IS IMMUTABLE. When ctx carries a captured Netlify site id
  *    (ctx.siteId, captured by the route BEFORE dispatch), the spawn receives
@@ -110,7 +114,10 @@ function createDeployRunner(deps) {
     env = env || 'staging';
     const siteTag = ctx.siteTag || getTag();
     const deploymentId = ctx.deploymentId || null;
-    const sourceDir = ctx.sourceDir || 'dist-vnext';
+    // Legacy-safe default: callers that omit sourceDir ship the legacy 'dist'
+    // artifact, never the V1 artifact. The V1 route always passes 'dist-vnext'
+    // explicitly.
+    const sourceDir = ctx.sourceDir || 'dist';
     const capturedSiteId = ctx.siteId || null;
     const capturedProvider = ctx.provider || null;
     const progressKey = `${siteTag}:${env}`;

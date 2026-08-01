@@ -39,7 +39,7 @@ const REPORT = path.join(ROOT, 'runtime-vnext', 'reports', 'tag-call-sites.json'
  * { classification, site_tag_source }
  */
 const NEW_SITES = {
-  "runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist-vnext' });": {
+  "runDeploy(ws, deployEnv, { siteTag: TAG, sourceDir: 'dist' });": {
     classification: 'authority-read',
     site_tag_source:
       'Chat-path deploy: the operator\'s selected site is captured ONCE into ctx at dispatch; the deploy-runner ' +
