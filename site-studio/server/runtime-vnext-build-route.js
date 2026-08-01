@@ -39,10 +39,17 @@
  *
  * ADAPTATIONS vs the feature version:
  *   - Main's RecipeRunner.publish() targets sites_root/<tag>/dist and takes no
- *     publishDir, so this route runs with publish:false and then syncs
- *     workspace outputs into sites/<tag>/dist-vnext itself — mirroring
- *     runtime-vnext/server-bridge.js syncOutputsToSiteDist but targeting
- *     dist-vnext. server-bridge's legacy dist behaviour is untouched.
+ *     publishDir, so this route runs with publish:false and then publishes the
+ *     workspace outputs into sites/<tag>/dist-vnext itself via
+ *     server/dist-vnext-publish.js — a STAGED, ATOMIC swap (never the legacy
+ *     rm-rf+cp sync, which could leave a half-copied artifact live).
+ *     server-bridge's legacy dist behaviour is untouched.
+ *   - Publication status is separate from recipe execution status. The runner
+ *     persists 'published' when execution succeeds; this route immediately
+ *     rewrites the run to 'recipe_completed', transitions it to 'publishing'
+ *     for the atomic swap, and persists 'published' / 'publish_failed' only
+ *     from the swap's outcome. A run is never reported published merely
+ *     because the recipe finished.
  *   - Concurrency guard is an IN-PROCESS per-site set. The feature's persisted
  *     SQLite build_locks table depended on the feature's migration framework,
  *     which does not exist on main; no lock table is ported.
@@ -62,21 +69,7 @@ const { DeterministicToolRunner } = require('../runtime-vnext/families/determini
 const { siteTagOr400 } = require('../lib/request-context');
 const { isValidPageName } = require('./validators');
 const vnextDb = require('../runtime-vnext/state/db');
-
-/**
- * Mirror of runtime-vnext/server-bridge.js syncOutputsToSiteDist, but the
- * publish target is the V1 artifact tree (dist-vnext), never the legacy dist.
- */
-function syncOutputsToDistVnext({ workspace_root, dist_vnext_dir }) {
-  const outputsDir = path.join(workspace_root, 'outputs');
-  if (!fs.existsSync(outputsDir)) return { synced: false, reason: 'outputs_missing', distDir: dist_vnext_dir };
-
-  fs.mkdirSync(path.dirname(dist_vnext_dir), { recursive: true });
-  fs.rmSync(dist_vnext_dir, { recursive: true, force: true });
-  fs.cpSync(outputsDir, dist_vnext_dir, { recursive: true });
-
-  return { synced: true, distDir: dist_vnext_dir };
-}
+const { publishDistVnextAtomic, reconcileDistVnextDirs } = require('./dist-vnext-publish');
 
 // In-process per-site build guard. A second concurrent build for the SAME site
 // is refused with 409; different sites may build concurrently. This replaces
@@ -95,6 +88,22 @@ const buildsInProgress = new Set();
  */
 function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnextDir, hubRoot, recipePath, getPreviewPort }) {
   // NOTE: server.js already mounts express.json() globally.
+
+  // Boot-time reconciliation. A process that died mid-publication can leave:
+  //   - runs stuck at 'publishing' (their swap never completed) -> publish_failed
+  //   - abandoned .dist-vnext-*-tmp / .dist-vnext-backup-* dirs per site ->
+  //     cleaned up, restoring a backup to dist-vnext when its staged
+  //     counterpart never landed (see server/dist-vnext-publish.js)
+  try {
+    for (const run of vnextDb.listRunsByStatus('publishing')) {
+      vnextDb.updateRunStatus(run.run_id, 'publish_failed', new Date().toISOString());
+    }
+    for (const project of vnextDb.listProjects()) {
+      reconcileDistVnextDirs(path.dirname(getDistVnextDir(project.site_tag)));
+    }
+  } catch (err) {
+    console.warn(`[build-vnext] boot reconciliation failed: ${err.message}`);
+  }
 
   // The URL that previews the exact dist-vnext artifact of an explicitly named
   // site. The preview server serves it at /vnext/<siteTag>/; legacy surfaces
@@ -130,7 +139,7 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
       recipe_version: run.recipe_version,
       started_at: run.started_at,
       ended_at: run.ended_at,
-      error: run.status === 'failed' ? (run.error || null) : null,
+      error: run.status === 'failed' || run.status === 'publish_failed' ? (run.error || null) : null,
     });
   });
 
@@ -246,18 +255,35 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
         });
       }
 
-      const sync = syncOutputsToDistVnext({
-        workspace_root: runContext.workspace_root,
-        dist_vnext_dir: publishDir,
-      });
-      if (!sync.synced) {
+      // The recipe executed cleanly — but the runner persists 'published' for
+      // recipe-level completion and NOTHING has been published yet. Rewrite
+      // the run to its truthful recipe-level state before publication starts.
+      vnextDb.updateRunStatus(runContext.run_id, 'recipe_completed');
+
+      // Operator V1 publication: stage outputs into a sibling temp dir, then
+      // atomically swap it into dist-vnext. The previously published artifact
+      // is preserved/restored on any failure, and the run reaches 'published'
+      // only after the swap landed.
+      vnextDb.updateRunStatus(runContext.run_id, 'publishing');
+      try {
+        // Lazy per-site reconciliation of dirs abandoned by a crashed build.
+        reconcileDistVnextDirs(path.dirname(publishDir));
+        publishDistVnextAtomic({
+          workspaceRoot: runContext.workspace_root,
+          distVnextDir: publishDir,
+          runId: runContext.run_id,
+          expectedPages: inputPages,
+        });
+      } catch (publishErr) {
+        vnextDb.updateRunStatus(runContext.run_id, 'publish_failed', new Date().toISOString());
         return res.status(500).json({
           success: false,
-          error: `Build succeeded but outputs could not be published (${sync.reason})`,
+          error: `Build succeeded but publication failed (${publishErr.message})`,
           run_id: runContext.run_id,
           project_id: runContext.project_id,
         });
       }
+      vnextDb.updateRunStatus(runContext.run_id, 'published', new Date().toISOString());
 
       const files = fs.existsSync(publishDir)
         ? fs.readdirSync(publishDir).filter((f) => fs.statSync(path.join(publishDir, f)).isFile())
@@ -285,4 +311,4 @@ function registerRuntimeVnextBuildRoute({ app, readSpec, writeSpec, getDistVnext
   });
 }
 
-module.exports = { registerRuntimeVnextBuildRoute, syncOutputsToDistVnext };
+module.exports = { registerRuntimeVnextBuildRoute };

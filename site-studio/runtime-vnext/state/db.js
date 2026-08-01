@@ -118,6 +118,10 @@ function getProject(projectId) {
   return getDb().prepare('SELECT * FROM projects WHERE project_id = ?').get(projectId);
 }
 
+function listProjects() {
+  return getDb().prepare('SELECT * FROM projects ORDER BY created_at ASC').all();
+}
+
 // --- Run operations ---
 
 function createRun({ runId, projectId, recipeId, recipeVersion, status, workspaceRoot, startedAt, parentRunId, trigger }) {
@@ -147,6 +151,10 @@ function listRunningRuns() {
   return getDb().prepare(`
     SELECT * FROM runs WHERE status IN ('preparing', 'running', 'committing') ORDER BY started_at ASC
   `).all();
+}
+
+function listRunsByStatus(status) {
+  return getDb().prepare('SELECT * FROM runs WHERE status = ? ORDER BY started_at ASC').all(status);
 }
 
 // --- Stage attempt operations ---
@@ -203,10 +211,12 @@ module.exports = {
   createProject,
   getProject,
   getProjectBySiteTag,
+  listProjects,
   createRun,
   getRun,
   updateRunStatus,
   listRunningRuns,
+  listRunsByStatus,
   createStageAttempt,
   getStageAttemptsForRun,
   updateStageAttemptStatus,
