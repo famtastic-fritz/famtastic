@@ -1,0 +1,49 @@
+{
+  "mode": "STUB",
+  "reason": "config.paypal_live is false",
+  "created_at": "2026-06-18T14:42:07",
+  "draft_id": "DRAFT-STUB-202606181442070413",
+  "status": "DRAFT (simulated \u2014 not created in PayPal)",
+  "endpoint": "https://api-m.sandbox.paypal.com/v2/invoicing/invoices",
+  "request_body": {
+    "detail": {
+      "currency_code": "USD",
+      "note": "Thank you for your business.",
+      "terms_and_conditions": "Due on receipt. Work begins once payment clears.",
+      "payment_term": {
+        "term_type": "DUE_ON_RECEIPT"
+      }
+    },
+    "invoicer": {
+      "name": {
+        "given_name": "FAMtastic",
+        "surname": "Designs"
+      },
+      "email_address": "you@example.com"
+    },
+    "primary_recipients": [
+      {
+        "billing_info": {
+          "name": {
+            "given_name": "Valued",
+            "surname": "Customer"
+          },
+          "email_address": "live@test.com"
+        }
+      }
+    ],
+    "items": [
+      {
+        "name": "Live test diagnostic",
+        "quantity": "1",
+        "unit_amount": {
+          "currency_code": "USD",
+          "value": "500.00"
+        },
+        "unit_of_measure": "QUANTITY"
+      }
+    ]
+  },
+  "amount": "500.00 USD",
+  "note": "Offline stub. Flip live per SETUP.md to create a real draft."
+}

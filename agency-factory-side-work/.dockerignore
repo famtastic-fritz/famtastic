@@ -1,0 +1,12 @@
+# Build the image from a CLEAN slate so each evaluation starts fresh.
+data/
+logs/
+deliverables/
+dashboard/index.html
+agents/worker_*.py
+LEARNINGS.md
+__pycache__/
+*.pyc
+.env
+eval-output/
+.git/
